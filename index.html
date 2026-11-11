@@ -651,6 +651,21 @@ function draw(){
   ctx.stroke();
  }
 
+ // Yellow dotted circle around the ball: its effective contact reach against
+ // the arena walls. This is a visual guide only and does not alter physics.
+ const ballBody=bodies.find(body=>body.kind==='ball');
+ if(ballBody){
+  const ballInfluenceRadius=Math.max(0,ballBody.r*.73416-8);
+  ctx.save();
+  ctx.strokeStyle='rgba(255,220,72,.98)';
+  ctx.lineWidth=3;
+  ctx.setLineDash([3,6]);
+  ctx.beginPath();
+  ctx.arc(ballBody.x,ballBody.y,ballInfluenceRadius,0,Math.PI*2);
+  ctx.stroke();
+  ctx.restore();
+ }
+
  // Post contact circles, centered on the adjusted post locations.
  const postInfluenceRadius=(goalPostRadius+13.2)*.73416-12;
  for(const post of goalPosts){
