@@ -651,15 +651,18 @@ function draw(){
   ctx.stroke();
  }
 
- // Yellow dotted circle around the ball: its effective contact reach against
- // the arena walls. This is a visual guide only and does not alter physics.
+ // Yellow dotted envelope: the ball's maximum center-to-center contact
+ // distance against the full-size player discs, using the same threshold
+ // as collide(). This is the outermost effective reach, not the ball's own edge.
  const ballBody=bodies.find(body=>body.kind==='ball');
  if(ballBody){
-  const ballInfluenceRadius=Math.max(0,ballBody.r*.73416-8);
+  const largestTargetRadius=bodies.reduce((max,body)=>
+   body!==ballBody&&body.kind!=='post'?Math.max(max,body.r):max,0);
+  const ballInfluenceRadius=Math.max(0,(ballBody.r+largestTargetRadius)*.73416-12);
   ctx.save();
   ctx.strokeStyle='rgba(255,220,72,.98)';
   ctx.lineWidth=3;
-  ctx.setLineDash([3,6]);
+  ctx.setLineDash([4,6]);
   ctx.beginPath();
   ctx.arc(ballBody.x,ballBody.y,ballInfluenceRadius,0,Math.PI*2);
   ctx.stroke();
