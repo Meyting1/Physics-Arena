@@ -651,23 +651,6 @@ function draw(){
   ctx.stroke();
  }
 
- // Yellow dotted envelope: the ball's maximum center-to-center contact
- // distance against the full-size player discs, using the same threshold
- // as collide(). This is the outermost effective reach, not the ball's own edge.
- const ballBody=bodies.find(body=>body.kind==='ball');
- if(ballBody){
-  const largestTargetRadius=bodies.reduce((max,body)=>
-   body!==ballBody&&body.kind!=='post'?Math.max(max,body.r):max,0);
-  const ballInfluenceRadius=Math.max(0,(ballBody.r+largestTargetRadius)*.73416-12);
-  ctx.save();
-  ctx.strokeStyle='rgba(255,220,72,.98)';
-  ctx.lineWidth=3;
-  ctx.setLineDash([4,6]);
-  ctx.beginPath();
-  ctx.arc(ballBody.x,ballBody.y,ballInfluenceRadius,0,Math.PI*2);
-  ctx.stroke();
-  ctx.restore();
- }
 
  // Post contact circles, centered on the adjusted post locations.
  const postInfluenceRadius=(goalPostRadius+13.2)*.73416-12;
@@ -694,6 +677,19 @@ function draw(){
  // Drawn only for presentation; no collision, scoring, or movement logic uses these images.
  drawGoalOverlay(goalLeftTexture,goalLeftBounds,FIELD.left-goalDepth,FIELD.goalTop,goalDepth,FIELD.goalBottom-FIELD.goalTop);
  drawGoalOverlay(goalRightTexture,goalRightBounds,FIELD.right,FIELD.goalTop,goalDepth,FIELD.goalBottom-FIELD.goalTop);
+ // Yellow dotted outline: exactly the ball's own visible radius.
+ // Drawn after every PNG overlay so no image can cover it.
+ const ballOutline=bodies.find(body=>body.kind==='ball');
+ if(ballOutline){
+  ctx.save();
+  ctx.strokeStyle='rgba(255,220,72,.98)';
+  ctx.lineWidth=3;
+  ctx.setLineDash([4,6]);
+  ctx.beginPath();
+  ctx.arc(ballOutline.x,ballOutline.y,ballOutline.r,0,Math.PI*2);
+  ctx.stroke();
+  ctx.restore();
+ }
  ctx.restore();
  particles=particles.filter(p=>p.life-->0);for(const p of particles){p.x+=p.vx;p.y+=p.vy;p.vx*=.96;p.vy*=.96}
  trails=trails.filter(t=>t.life-->0);
