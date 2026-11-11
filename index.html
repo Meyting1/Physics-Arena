@@ -621,7 +621,7 @@ function draw(){
  // Pink dotted circles show only the goal-post influence boundary used for ball/player contact.
  // TEMPORARY PURPLE DEBUG GUIDES: visualization only; collision physics is unchanged.
  ctx.save();
- ctx.strokeStyle='rgba(178,92,255,.98)';
+ ctx.strokeStyle='rgba(105,205,255,.98)';
  ctx.lineWidth=2.2;
  ctx.setLineDash([4,6]);
 
@@ -667,7 +667,7 @@ function draw(){
  const b=selected,len=Math.hypot(gestureVector.x,gestureVector.y),shownLength=Math.min(len,150),power=Math.min(len,150);
  const nx=len>0?gestureVector.x/len:0,ny=len>0?gestureVector.y/len:0;
  // Draw exactly one guide. Its angle is identical to the vector passed to strike().
- ctx.save();ctx.strokeStyle='#ffd166';ctx.lineWidth=4;ctx.setLineDash([9,8]);ctx.globalAlpha=.95;
+ ctx.save();ctx.strokeStyle='#69cdff';ctx.lineWidth=4;ctx.setLineDash([9,8]);ctx.globalAlpha=.95;
  ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.x+nx*shownLength,b.y+ny*shownLength);ctx.stroke();
  ctx.setLineDash([]);ctx.restore();ctx.globalAlpha=1;
  ctx.fillStyle='#fff0c2';ctx.font='bold 13px system-ui';ctx.fillText('AIM '+Math.round(power/150*100)+'%',b.x+35,b.y-34);
@@ -682,7 +682,7 @@ function draw(){
  const ballOutline=bodies.find(body=>body.kind==='ball');
  if(ballOutline){
   ctx.save();
-  ctx.strokeStyle='rgba(255,220,72,.98)';
+  ctx.strokeStyle='rgba(105,205,255,.98)';
   ctx.lineWidth=3;
   ctx.setLineDash([4,6]);
   ctx.beginPath();
