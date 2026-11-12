@@ -703,6 +703,19 @@ function draw(){
  }
 
 
+// Restore the dotted aiming direction guide; collision/debug guides stay hidden.
+if(selected&&gestureVector){
+ const b=selected,len=Math.hypot(gestureVector.x,gestureVector.y);
+ const nx=len>0?gestureVector.x/len:0,ny=len>0?gestureVector.y/len:0;
+ const power=Math.min(len,150);
+ const haloPower=twoFingerMode?clamp((power-50)/100,0,1):oneFingerAimPct;
+ const haloDiameter=2*(b.r+8+58*haloPower);
+ if(haloPower>0){
+  ctx.save();ctx.strokeStyle='#69cdff';ctx.lineWidth=4;ctx.setLineDash([9,8]);ctx.globalAlpha=.95;
+  ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.x+nx*haloDiameter,b.y+ny*haloDiameter);ctx.stroke();
+  ctx.setLineDash([]);ctx.restore();ctx.globalAlpha=1;
+ }
+}
 ctx.restore();
  particles=particles.filter(p=>p.life-->0);for(const p of particles){p.x+=p.vx;p.y+=p.vy;p.vx*=.96;p.vy*=.96}
  trails=trails.filter(t=>t.life-->0);
