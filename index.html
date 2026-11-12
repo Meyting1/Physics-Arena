@@ -143,7 +143,9 @@ function pos(e){const r=canvas.getBoundingClientRect();const sx=(e.clientX-r.lef
 function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
 function updateTurn(){}
 function moving(){return bodies.some(b=>b._returnAnim||Math.hypot(b.vx,b.vy)>(b.kind==='ball'?.08:.8))}
-function playTone(freq=260,dur=.06,type='sine',vol=.035){if(!soundOn)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();let o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=freq;g.gain.value=vol;o.connect(g);g.connect(audio.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);o.stop(audio.currentTime+dur)}catch{}}
+function playTone(freq=260,dur=.06,type='sine',vol=.035){if(!soundOn)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume().catch(()=>{});let o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=freq;g.gain.value=vol;o.connect(g);g.connect(audio.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);o.stop(audio.currentTime+dur)}catch{}}
+// Short, consistent UI click used only by team and formation controls.
+function playClickSound(){playTone(680,.035,'square',.018)}
 function ballTrajectoryEntersGoal(ball){
  const minY=FIELD.goalTop+ball.r*.8;
  const maxY=FIELD.goalBottom-ball.r*.8;
@@ -248,11 +250,11 @@ function beginAim(p,id){
   if(p.y>220&&p.y<505){
    const cardXs=[205,485,765,1045];
    for(let i=0;i<cardXs.length;i++){
-    if(p.x>=cardXs[i]&&p.x<=cardXs[i]+235){chosenTeam=i;return;}
+    if(p.x>=cardXs[i]&&p.x<=cardXs[i]+235){chosenTeam=i;playClickSound();return;}
    }
   }
   if(chosenTeam>=0&&p.x>=570&&p.x<=960&&p.y>=555&&p.y<=635){
-   opponentTeam=Math.floor(Math.random()*teamChoices.length);screenState='game';setup();return;
+   playClickSound();opponentTeam=Math.floor(Math.random()*teamChoices.length);screenState='game';setup();return;
   }
   return;
  }
@@ -859,9 +861,9 @@ drawGoalOverlay(goalLeftTexture,goalLeftBounds,FIELD.left-goalDepth,FIELD.goalTo
 let last=0,accumulator=0,aiWait=0;const FIXED_STEP=1/360;
 function frame(t){if(!last)last=t;const elapsed=Math.min((t-last)/1000,.05);last=t;accumulator+=elapsed;while(accumulator>=FIXED_STEP){if(moving())physics(FIXED_STEP);accumulator-=FIXED_STEP}if(!moving()&&turn==='B'){aiWait+=elapsed*60;if(aiWait>30){aiWait=0;ai()}}else if(turn!=='B')aiWait=0;draw();requestAnimationFrame(frame)}
 const formationButton=$('formationButton'),formationPanel=$('formationPanel');
-formationButton.addEventListener('click',()=>{if(screenState!=='game')return;formationPanelOpen=!formationPanelOpen;formationPanel.hidden=!formationPanelOpen;});
+formationButton.addEventListener('click',()=>{if(screenState!=='game')return;playClickSound();formationPanelOpen=!formationPanelOpen;formationPanel.hidden=!formationPanelOpen;});
 $('formationClose').addEventListener('click',()=>{formationPanelOpen=false;formationPanel.hidden=true;});
-formationPanel.addEventListener('click',e=>{const option=e.target.closest('.formationOption');if(!option)return;if(moving())return;applyFormation(Number(option.dataset.formation));formationPanelOpen=false;formationPanel.hidden=true;});
+formationPanel.addEventListener('click',e=>{const option=e.target.closest('.formationOption');if(!option)return;if(moving())return;playClickSound();applyFormation(Number(option.dataset.formation));formationPanelOpen=false;formationPanel.hidden=true;});
 new ResizeObserver(resize).observe(canvas);resize();setup();requestAnimationFrame(frame);
 })();
 </script>
