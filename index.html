@@ -92,43 +92,9 @@ function playTone(freq=260,dur=.06,type='sine',vol=.035){if(!soundOn)return;try{
 function playPostClang(impactSpeed){
  if(!soundOn)return;
  try{
-  audio=audio||new(window.AudioContext||window.webkitAudioContext)();
-  const now=audio.currentTime;
-  const strength=clamp(impactSpeed/650,.55,1.35);
-  // A heavy rubber-ball impact on hard asphalt: a sharp slap over a compact low thump.
-  const master=audio.createGain();master.gain.value=.9;master.connect(audio.destination);
-  const low=audio.createOscillator(),lowGain=audio.createGain();
-  low.type='sine';
-  low.frequency.setValueAtTime(118,now);
-  low.frequency.exponentialRampToValueAtTime(58,now+.115);
-  lowGain.gain.setValueAtTime(.0001,now);
-  lowGain.gain.linearRampToValueAtTime(.22*strength,now+.004);
-  lowGain.gain.exponentialRampToValueAtTime(.0001,now+.19);
-  low.connect(lowGain);lowGain.connect(master);low.start(now);low.stop(now+.2);
-  const body=audio.createOscillator(),bodyGain=audio.createGain();
-  body.type='triangle';
-  body.frequency.setValueAtTime(205,now);
-  body.frequency.exponentialRampToValueAtTime(112,now+.075);
-  bodyGain.gain.setValueAtTime(.0001,now);
-  bodyGain.gain.linearRampToValueAtTime(.105*strength,now+.003);
-  bodyGain.gain.exponentialRampToValueAtTime(.0001,now+.105);
-  body.connect(bodyGain);bodyGain.connect(master);body.start(now);body.stop(now+.12);
-  // Short filtered noise supplies the dry, gritty asphalt contact without metallic ringing.
-  const length=Math.floor(audio.sampleRate*.085);
-  const buffer=audio.createBuffer(1,length,audio.sampleRate),data=buffer.getChannelData(0);
-  for(let i=0;i<length;i++)data[i]=(Math.random()*2-1)*(1-i/length);
-  const noise=audio.createBufferSource(),filter=audio.createBiquadFilter(),noiseGain=audio.createGain();
-  noise.buffer=buffer;filter.type='lowpass';filter.frequency.value=1850;
-  noiseGain.gain.setValueAtTime(.0001,now);
-  noiseGain.gain.linearRampToValueAtTime(.115*strength,now+.002);
-  noiseGain.gain.exponentialRampToValueAtTime(.0001,now+.075);
-  noise.connect(filter);filter.connect(noiseGain);noiseGain.connect(master);
-  noise.start(now);noise.stop(now+.09);
-  // A very quiet, short reflection gives the impact a little space, not a metal-post echo.
-  const reflection=audio.createDelay(.12),reflectionGain=audio.createGain();
-  reflection.delayTime.value=.048;reflectionGain.gain.value=.12;
-  master.connect(reflection);reflection.connect(reflectionGain);reflectionGain.connect(audio.destination);
-  setTimeout(()=>{try{master.disconnect();reflection.disconnect();reflectionGain.disconnect()}catch{}},450);
+  const hit=new Audio('./ball.m4a');
+  hit.volume=clamp(impactSpeed/650,.55,1);
+  hit.play().catch(()=>{});
  }catch{}
 }
 function burst(x,y,color,n=12){for(let i=0;i<n;i++){let a=Math.random()*Math.PI*2,s=1+Math.random()*5;particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:35+Math.random()*20,color,r:1+Math.random()*3})}}
