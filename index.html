@@ -94,19 +94,24 @@ function playPostClang(impactSpeed){
  try{
   audio=audio||new(window.AudioContext||window.webkitAudioContext)();
   const now=audio.currentTime;
-  const strength=clamp(impactSpeed/650,.35,1);
-  // Inharmonic, quickly struck resonances create a hollow steel-tube clang.
-  const modes=[{f:178,d:.34,v:.050},{f:463,d:.25,v:.030},{f:731,d:.19,v:.018},{f:1087,d:.12,v:.009}];
+  const strength=clamp(impactSpeed/650,.45,1.25);
+  // A fuller hollow-steel strike with a short feedback echo.
+  const delay=audio.createDelay(.8),feedback=audio.createGain(),wet=audio.createGain();
+  delay.delayTime.value=.105;feedback.gain.value=.24;wet.gain.value=.48;
+  delay.connect(feedback);feedback.connect(delay);delay.connect(wet);wet.connect(audio.destination);
+  const modes=[{f:165,d:.52,v:.082},{f:392,d:.43,v:.052},{f:617,d:.34,v:.034},{f:887,d:.27,v:.021},{f:1215,d:.18,v:.012}];
   for(const mode of modes){
    const osc=audio.createOscillator(),gain=audio.createGain();
    osc.type='sine';
    osc.frequency.setValueAtTime(mode.f*(.97+Math.random()*.06),now);
    gain.gain.setValueAtTime(.0001,now);
-   gain.gain.linearRampToValueAtTime(mode.v*strength,now+.004);
+   gain.gain.linearRampToValueAtTime(mode.v*strength,now+.005);
    gain.gain.exponentialRampToValueAtTime(.0001,now+mode.d);
-   osc.connect(gain);gain.connect(audio.destination);
-   osc.start(now);osc.stop(now+mode.d+.015);
+   osc.connect(gain);gain.connect(audio.destination);gain.connect(delay);
+   osc.start(now);osc.stop(now+mode.d+.02);
   }
+  // Disconnect the temporary echo network after its tail has faded.
+  setTimeout(()=>{try{delay.disconnect();feedback.disconnect();wet.disconnect()}catch{}},1500);
  }catch{}
 }
 function burst(x,y,color,n=12){for(let i=0;i<n;i++){let a=Math.random()*Math.PI*2,s=1+Math.random()*5;particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:35+Math.random()*20,color,r:1+Math.random()*3})}}
