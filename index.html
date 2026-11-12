@@ -698,8 +698,19 @@ function draw(){
  ctx.save();ctx.strokeStyle='#69cdff';ctx.lineWidth=4;ctx.setLineDash([9,8]);ctx.globalAlpha=.95;
  ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.x+nx*shownLength,b.y+ny*shownLength);ctx.stroke();
  ctx.setLineDash([]);ctx.restore();ctx.globalAlpha=1;
- ctx.fillStyle='#fff0c2';ctx.font='bold 13px system-ui';const shownAimPct=twoFingerMode?clamp((power-50)/100,0,1):oneFingerAimPct;
- ctx.fillText('AIM '+Math.round(shownAimPct*100)+'%',b.x+35,b.y-34);
+ const haloPower=twoFingerMode?clamp((power-50)/100,0,1):oneFingerAimPct;
+ if(haloPower>0){
+  const haloRadius=b.r+8+58*haloPower;
+  ctx.save();
+  ctx.globalAlpha=.12+.22*haloPower;
+  ctx.fillStyle=b.color;
+  ctx.shadowColor=b.color;ctx.shadowBlur=10+24*haloPower;
+  ctx.beginPath();ctx.arc(b.x,b.y,haloRadius,0,Math.PI*2);ctx.fill();
+  ctx.globalAlpha=.35+.5*haloPower;
+  ctx.strokeStyle=b.color;ctx.lineWidth=2+2*haloPower;
+  ctx.beginPath();ctx.arc(b.x,b.y,haloRadius,0,Math.PI*2);ctx.stroke();
+  ctx.restore();
+ }
  }
  for(const p of particles){ctx.globalAlpha=clamp(p.life/45,0,1);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;
  // Highest visual layer: supplied goal PNGs sit over the ball and all gameplay artwork.
