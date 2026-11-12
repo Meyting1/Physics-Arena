@@ -91,7 +91,7 @@ function moving(){return bodies.some(b=>b._returnAnim||Math.hypot(b.vx,b.vy)>.8)
 function playTone(freq=260,dur=.06,type='sine',vol=.035){if(!soundOn)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();let o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=freq;g.gain.value=vol;o.connect(g);g.connect(audio.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);o.stop(audio.currentTime+dur)}catch{}}
 function burst(x,y,color,n=12){for(let i=0;i<n;i++){let a=Math.random()*Math.PI*2,s=1+Math.random()*5;particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:35+Math.random()*20,color,r:1+Math.random()*3})}}
 function showToast(){}
-function strike(b,dx,dy){const len=Math.hypot(dx,dy);if(len<2.5)return;const aimPct=clamp((len-50)/100,0,1);const aimPower=b.kind==='ball'?Math.pow(aimPct,1.8):aimPct;const power=1100*aimPower*(b.kind==='ball'?1.25:1)*1.10*1.5;b.vx=dx/len*power;b.vy=dy/len*power;b.spin=0;b.lowAimDrag=0;b.frictionActive=false;b.ballCollisionCount=0;b.lastBallCollisionTick=-1;if(b.kind!=='ball'){const ball=bodies.find(body=>body.kind==='ball');if(ball){ball.frictionActive=false;ball.ballCollisionCount=0;ball._contactsLastTick=new Set();ball._contactsThisTick=new Set();}}turn=turn==='A'?'B':'A';shots++;updateTurn();playTone(180,.09,'triangle',.05);burst(b.x,b.y,b.color,7)}
+function strike(b,dx,dy,aimPctOverride=null){const len=Math.hypot(dx,dy);if(len<2.5)return;const aimPct=aimPctOverride===null?clamp((len-50)/100,0,1):clamp(aimPctOverride,0,1);const aimPower=b.kind==='ball'?Math.pow(aimPct,1.8):aimPct;const power=1100*aimPower*(b.kind==='ball'?1.25:1)*1.10*1.5;b.vx=dx/len*power;b.vy=dy/len*power;b.spin=0;b.lowAimDrag=0;b.frictionActive=false;b.ballCollisionCount=0;b.lastBallCollisionTick=-1;if(b.kind!=='ball'){const ball=bodies.find(body=>body.kind==='ball');if(ball){ball.frictionActive=false;ball.ballCollisionCount=0;ball._contactsLastTick=new Set();ball._contactsThisTick=new Set();}}turn=turn==='A'?'B':'A';shots++;updateTurn();playTone(180,.09,'triangle',.05);burst(b.x,b.y,b.color,7)}
 const teamA=[0,3,5,7,9],teamB=[1,4,6,8,10];
 // Clean aiming controller: one finger keeps the original pull-back gesture;
 // with two fingers, movement from BOTH fingers contributes to the same aim vector.
@@ -103,7 +103,7 @@ let powerPointerId=null,directionPointerId=null;
 let powerStart=null,powerLength=0,powerBase=0,powerRadialStart=0,powerRadialBase=0,directionUnit=null,directionTarget=null,twoFingerMode=false;
 let dualPowerVector=null;
 let pinchStartDistance=0,pinchStartAngle=0,pinchBasePower=0,pinchBaseDirection=0;
-let gestureVector=null,gestureCancelled=false;
+let gestureVector=null,gestureCancelled=false,maxGestureLength=0,oneFingerAimPct=0;
 function screenPoint(clientX,clientY){
  const r=canvas.getBoundingClientRect();
  const sx=(clientX-r.left)*dpr,sy=(clientY-r.top)*dpr;
@@ -147,6 +147,7 @@ function beginAim(p,id){
   selected=hit;powerPointerId=id;
   // Preserve the original one-finger pull-back vector until a second finger is added.
   gestureVector={x:0,y:0};
+  maxGestureLength=0;oneFingerAimPct=0;
   twoFingerMode=false;powerStart=p;powerBase=0;powerLength=0;powerRadialStart=0;powerRadialBase=0;directionUnit=null;directionTarget=null;
   gestureCancelled=false;aim={x:p.x,y:p.y};
  }else if(activePointers.size===1&&selected){
@@ -190,6 +191,11 @@ function moveAim(id,p){
    // Original one-finger aiming: preserve the pull vector and apply pointer movement deltas.
    const previous=pointerPositions.get(id);
    if(previous){gestureVector.x-=(p.x-previous.x);gestureVector.y-=(p.y-previous.y);}
+   const currentLength=Math.hypot(gestureVector.x,gestureVector.y);
+   maxGestureLength=Math.max(maxGestureLength,currentLength);
+   const peakPower=clamp((maxGestureLength-50)/100,0,1);
+   const returnDistance=Math.max(0,maxGestureLength-currentLength);
+   oneFingerAimPct=clamp(peakPower-returnDistance/100,0,1);
    aim={x:p.x,y:p.y};
   }
  }else if(id===powerPointerId||id===directionPointerId){
@@ -222,11 +228,12 @@ function finishAim(id,cancelled=false){
   const remainingPoint=pointerPositions.get(remainingId);
   powerPointerId=remainingId;directionPointerId=null;twoFingerMode=false;
   if(remainingPoint)aim={x:remainingPoint.x,y:remainingPoint.y};
+  maxGestureLength=Math.hypot(gestureVector?.x||0,gestureVector?.y||0);oneFingerAimPct=clamp((maxGestureLength-50)/100,0,1);
  }else if(activePointers.size===0){
-  if(!gestureCancelled&&selected&&gestureVector)strike(selected,gestureVector.x,gestureVector.y);
+  if(!gestureCancelled&&selected&&gestureVector)strike(selected,gestureVector.x,gestureVector.y,twoFingerMode?null:oneFingerAimPct);
   selected=null;aim=null;powerPointerId=null;directionPointerId=null;
   powerStart=null;powerLength=0;powerBase=0;powerRadialStart=0;powerRadialBase=0;directionUnit=null;directionTarget=null;twoFingerMode=false;dualPowerVector=null;
-  gestureVector=null;gestureCancelled=false;pointerPositions.clear();touchPositions.clear();
+  gestureVector=null;gestureCancelled=false;maxGestureLength=0;oneFingerAimPct=0;pointerPositions.clear();touchPositions.clear();
  }
 }
 canvas.addEventListener('touchstart',e=>{
@@ -691,7 +698,8 @@ function draw(){
  ctx.save();ctx.strokeStyle='#69cdff';ctx.lineWidth=4;ctx.setLineDash([9,8]);ctx.globalAlpha=.95;
  ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.x+nx*shownLength,b.y+ny*shownLength);ctx.stroke();
  ctx.setLineDash([]);ctx.restore();ctx.globalAlpha=1;
- ctx.fillStyle='#fff0c2';ctx.font='bold 13px system-ui';ctx.fillText('AIM '+Math.round(clamp((power-50)/100,0,1)*100)+'%',b.x+35,b.y-34);
+ ctx.fillStyle='#fff0c2';ctx.font='bold 13px system-ui';const shownAimPct=twoFingerMode?clamp((power-50)/100,0,1):oneFingerAimPct;
+ ctx.fillText('AIM '+Math.round(shownAimPct*100)+'%',b.x+35,b.y-34);
  }
  for(const p of particles){ctx.globalAlpha=clamp(p.life/45,0,1);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;
  // Highest visual layer: supplied goal PNGs sit over the ball and all gameplay artwork.
