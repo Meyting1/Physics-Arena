@@ -105,6 +105,11 @@ function playPostClang(impactSpeed){
    if(!soundOn)return;
    const reaction=new Audio('./react.mp3');
    reaction.volume=1;
+   const reactionSource=audio.createMediaElementSource(reaction);
+   const reactionGain=audio.createGain();
+   reactionGain.gain.value=2.2;
+   reactionSource.connect(reactionGain);
+   reactionGain.connect(audio.destination);
    reaction.play().catch(()=>{});
   },200);
  }catch{}
