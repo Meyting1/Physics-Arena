@@ -370,8 +370,8 @@ function physics(h){
  // Several solver passes resolve contact chains and remove residual overlap.
  for(let pass=0;pass<4;pass++){
   for(let i=0;i<bodies.length;i++)for(let j=i+1;j<bodies.length;j++)collide(bodies[i],bodies[j]);
-  // Resolve each player/ball body against the four immovable circular goal posts.
-  for(const body of bodies)for(const post of goalPosts)collide(body,post);
+  // Goal posts use the same fixed-obstacle rebound response as the arena walls.
+  for(const body of bodies)for(const post of goalPosts)collidePostWall(body,post);
  }
  for(const b of bodies)if(b.kind==='ball')b._contactsLastTick=b._contactsThisTick;
  const ballSpeed=Math.hypot(bodies[2].vx,bodies[2].vy);
@@ -387,6 +387,34 @@ function wallSpin(b,tangentSpeed){
  b.spin+=clamp(tangentSpeed*.018,-9,9)*(b.kind==='ball'?1.0:.7);
 }
 function wallFX(x,y){if(Math.random()<.09)burst(x,y,'#53f5e8',3)}
+function collidePostWall(body,post){
+ if(body._returnAnim)return;
+ // Use the body's real contact footprint, not its full decorative artwork.
+ const bodyRadius=body.kind==='ball'?body.r:Math.max(0,body.r*.73416-8);
+ const bodyCenterY=body.y+(body.kind==='ball'?0:6);
+ const postCenterY=post.y+(post.y===FIELD.goalTop?19:0);
+ let dx=body.x-post.x,dy=bodyCenterY-postCenterY;
+ let dist=Math.hypot(dx,dy);
+ const minDistance=bodyRadius+post.r;
+ if(dist>=minDistance)return;
+ if(dist<1e-8){dx=1;dy=0;dist=1}
+ const nx=dx/dist,ny=dy/dist;
+ // Push the moving body out to the post's physical surface.
+ const overlap=minDistance-dist;
+ body.x+=nx*(overlap+.02);
+ body.y+=ny*(overlap+.02);
+ // Rebound like a fixed arena wall; the post itself never moves.
+ const normalSpeed=body.vx*nx+body.vy*ny;
+ if(normalSpeed<0){
+  const restitution=body.kind==='ball'?.92:.84;
+  body.vx-=(1+restitution)*normalSpeed*nx;
+  body.vy-=(1+restitution)*normalSpeed*ny;
+  markCollision(body,'goal-post');
+  const tangentSpeed=-body.vx*ny+body.vy*nx;
+  wallSpin(body,tangentSpeed);
+  wallFX(body.x,body.y);
+ }
+}
 function collide(a,b){
  if(a._returnAnim||b._returnAnim)return;
  const ballContact=a.kind==='ball'||b.kind==='ball';
@@ -652,14 +680,7 @@ function draw(){
  }
 
 
- // Post contact circles, centered on the adjusted post locations.
- const postInfluenceRadius=goalPostRadius+13.2;
- for(const post of goalPosts){
-  const centerY=post.y+(post.y===FIELD.goalTop?19:0);
-  ctx.beginPath();
-  ctx.arc(post.x,centerY,postInfluenceRadius,0,Math.PI*2);
-  ctx.stroke();
- }
+ // Goal-post influence circles are intentionally not drawn.
  ctx.setLineDash([]);
  ctx.restore();
 
