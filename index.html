@@ -515,6 +515,11 @@ function drawArenaEdits(){
  ctx.restore();
  ctx.strokeStyle='rgba(255,255,255,.68)';ctx.lineWidth=1;
  ctx.beginPath();ctx.moveTo(730,4);ctx.lineTo(837,4);ctx.stroke();
+ // Live match score, centered inside the silver scoreboard panel.
+ ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 34px Arial';
+ ctx.fillStyle='#20211e';ctx.shadowColor='rgba(0,0,0,.28)';ctx.shadowBlur=2;ctx.shadowOffsetY=1;
+ ctx.fillText(`${scoreA} - ${scoreB}`,783.5,39);
+ ctx.restore();
  // Coin artwork and balance intentionally omitted; retain the empty silver panel.
  // Gold-framed profile squares with empty dark centers for future live avatars.
  const avatar=(x)=>{
