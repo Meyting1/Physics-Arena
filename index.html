@@ -305,7 +305,7 @@ function physics(h){
    b.vx+=-vy*curve*h;b.vy+=vx*curve*h;
   }
   b.x+=b.vx*h;b.y+=b.vy*h;
-  b.angle+=(Math.hypot(b.vx,b.vy)/b.r+b.spin)*h;
+  b.angle+=(Math.hypot(b.vx,b.vy)/b.r+b.spin)*h*(b.kind==='ball'?1.18:1);
   b.spin*=Math.exp(-(b.kind==='ball'?1.7:2.8)*h);
   if(Math.hypot(b.vx,b.vy)<(b.kind==='ball'?.08:1.2)){b.vx=0;b.vy=0;b.spin=0}
   // Player-piece contacts use the exact green dotted ring: radius r*0.73416-8, centered 6px below the artwork center.
@@ -703,75 +703,7 @@ function draw(){
  }
 
 
- // Pink dotted circles show only the goal-post influence boundary used for ball/player contact.
- // TEMPORARY PURPLE DEBUG GUIDES: visualization only; collision physics is unchanged.
- ctx.save();
- ctx.strokeStyle='rgba(105,205,255,.98)';
- ctx.lineWidth=2.2;
- ctx.setLineDash([4,6]);
-
- // Field perimeter and goal-tunnel collision walls.
- const goalOpeningTop=FIELD.goalTop+19;
- ctx.beginPath();
- ctx.moveTo(FIELD.left,FIELD.top);ctx.lineTo(FIELD.right,FIELD.top);
- ctx.moveTo(FIELD.left,FIELD.bottom);ctx.lineTo(FIELD.right,FIELD.bottom);
- ctx.moveTo(FIELD.left,FIELD.top);ctx.lineTo(FIELD.left,goalOpeningTop);
- ctx.moveTo(FIELD.left,FIELD.goalBottom);ctx.lineTo(FIELD.left,FIELD.bottom);
- ctx.moveTo(FIELD.right,FIELD.top);ctx.lineTo(FIELD.right,goalOpeningTop);
- ctx.moveTo(FIELD.right,FIELD.goalBottom);ctx.lineTo(FIELD.right,FIELD.bottom);
- ctx.moveTo(FIELD.left-goalDepth,goalOpeningTop);ctx.lineTo(FIELD.left,goalOpeningTop);
- ctx.moveTo(FIELD.left-goalDepth,FIELD.goalBottom);ctx.lineTo(FIELD.left,FIELD.goalBottom);
- ctx.moveTo(FIELD.right,goalOpeningTop);ctx.lineTo(FIELD.right+goalDepth,goalOpeningTop);
- ctx.moveTo(FIELD.right,FIELD.goalBottom);ctx.lineTo(FIELD.right+goalDepth,FIELD.goalBottom);
- ctx.moveTo(FIELD.left-goalDepth,goalOpeningTop);ctx.lineTo(FIELD.left-goalDepth,FIELD.goalBottom);
- ctx.moveTo(FIELD.right+goalDepth,goalOpeningTop);ctx.lineTo(FIELD.right+goalDepth,FIELD.goalBottom);
- ctx.stroke();
-
- // Collision rings for every player piece and the ball.
- for(const body of bodies){
-  const radius=body.kind==='ball'?body.r:Math.max(0,body.r*.73416-8);
-  const centerY=body.y+(body.kind==='ball'?0:6);
-  ctx.beginPath();
-  ctx.arc(body.x,centerY,radius,0,Math.PI*2);
-  ctx.stroke();
- }
-
-
- // Goal-post influence circles are intentionally not drawn.
- ctx.setLineDash([]);
- ctx.restore();
-
- if(selected&&gestureVector){
- const b=selected,len=Math.hypot(gestureVector.x,gestureVector.y),power=Math.min(len,150);
- const nx=len>0?gestureVector.x/len:0,ny=len>0?gestureVector.y/len:0;
- const haloPower=twoFingerMode?clamp((power-50)/100,0,1):oneFingerAimPct;
- const haloDiameter=2*(b.r+8+58*haloPower);
- // The guide length tracks the halo's full diameter at every power level.
- if(haloPower>0){
-  ctx.save();ctx.strokeStyle='#69cdff';ctx.lineWidth=4;ctx.setLineDash([9,8]);ctx.globalAlpha=.95;
-  ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.x+nx*haloDiameter,b.y+ny*haloDiameter);ctx.stroke();
-  ctx.setLineDash([]);ctx.restore();ctx.globalAlpha=1;
- }
- }
- for(const p of particles){ctx.globalAlpha=clamp(p.life/45,0,1);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;
- // Highest visual layer: supplied goal PNGs sit over the ball and all gameplay artwork.
- // Drawn only for presentation; no collision, scoring, or movement logic uses these images.
- drawGoalOverlay(goalLeftTexture,goalLeftBounds,FIELD.left-goalDepth,FIELD.goalTop,goalDepth,FIELD.goalBottom-FIELD.goalTop);
- drawGoalOverlay(goalRightTexture,goalRightBounds,FIELD.right,FIELD.goalTop,goalDepth,FIELD.goalBottom-FIELD.goalTop);
- // Yellow dotted outline: exactly the ball's own visible radius.
- // Drawn after every PNG overlay so no image can cover it.
- const ballOutline=bodies.find(body=>body.kind==='ball');
- if(ballOutline){
-  ctx.save();
-  ctx.strokeStyle='rgba(105,205,255,.98)';
-  ctx.lineWidth=3;
-  ctx.setLineDash([4,6]);
-  ctx.beginPath();
-  ctx.arc(ballOutline.x,ballOutline.y,ballOutline.r,0,Math.PI*2);
-  ctx.stroke();
-  ctx.restore();
- }
- ctx.restore();
+ctx.restore();
  particles=particles.filter(p=>p.life-->0);for(const p of particles){p.x+=p.vx;p.y+=p.vy;p.vx*=.96;p.vy*=.96}
  trails=trails.filter(t=>t.life-->0);
 }
