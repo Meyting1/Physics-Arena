@@ -92,8 +92,14 @@ function playTone(freq=260,dur=.06,type='sine',vol=.035){if(!soundOn)return;try{
 function playPostClang(impactSpeed){
  if(!soundOn)return;
  try{
+  audio=audio||new(window.AudioContext||window.webkitAudioContext)();
   const hit=new Audio('./ball.m4a');
-  hit.volume=clamp(impactSpeed/650,.55,1);
+  hit.preload='auto';
+  hit.playbackRate=.86;
+  const source=audio.createMediaElementSource(hit);
+  const gain=audio.createGain();
+  gain.gain.value=1.3*clamp(impactSpeed/650,.8,1.25);
+  source.connect(gain);gain.connect(audio.destination);
   hit.play().catch(()=>{});
  }catch{}
 }
