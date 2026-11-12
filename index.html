@@ -716,7 +716,9 @@ if(selected&&gestureVector){
   ctx.setLineDash([]);ctx.restore();ctx.globalAlpha=1;
  }
 }
-ctx.restore();
+drawGoalOverlay(goalLeftTexture,goalLeftBounds,FIELD.left-goalDepth,FIELD.goalTop,goalDepth,FIELD.goalBottom-FIELD.goalTop);
+ drawGoalOverlay(goalRightTexture,goalRightBounds,FIELD.right,FIELD.goalTop,goalDepth,FIELD.goalBottom-FIELD.goalTop);
+ ctx.restore();
  particles=particles.filter(p=>p.life-->0);for(const p of particles){p.x+=p.vx;p.y+=p.vy;p.vx*=.96;p.vy*=.96}
  trails=trails.filter(t=>t.life-->0);
 }
