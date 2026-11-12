@@ -230,7 +230,7 @@ function finishAim(id,cancelled=false){
   if(remainingPoint)aim={x:remainingPoint.x,y:remainingPoint.y};
   maxGestureLength=Math.hypot(gestureVector?.x||0,gestureVector?.y||0);oneFingerAimPct=clamp((maxGestureLength-50)/100,0,1);
  }else if(activePointers.size===0){
-  if(!gestureCancelled&&selected&&gestureVector)strike(selected,gestureVector.x,gestureVector.y,twoFingerMode?null:oneFingerAimPct);
+  if(!gestureCancelled&&selected&&gestureVector){const finalLength=Math.hypot(gestureVector.x,gestureVector.y);const finalAimPct=twoFingerMode?clamp((finalLength-50)/100,0,1):oneFingerAimPct;if(finalAimPct>0)strike(selected,gestureVector.x,gestureVector.y,finalAimPct);}
   selected=null;aim=null;powerPointerId=null;directionPointerId=null;
   powerStart=null;powerLength=0;powerBase=0;powerRadialStart=0;powerRadialBase=0;directionUnit=null;directionTarget=null;twoFingerMode=false;dualPowerVector=null;
   gestureVector=null;gestureCancelled=false;maxGestureLength=0;oneFingerAimPct=0;pointerPositions.clear();touchPositions.clear();
