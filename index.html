@@ -318,18 +318,18 @@ function physics(h){
   const enteringLeftGoal=inGoalMouth&&b.x-hitRadius<FIELD.left;
   const enteringRightGoal=inGoalMouth&&b.x+hitRadius>FIELD.right;
 
-  if(b.x-hitRadius<FIELD.left&&!enteringLeftGoal){b.x=FIELD.left+hitRadius;markCollision(b,'wall-left');b.vx=Math.abs(b.vx)*(b.kind==='ball'?.92:.84);b.vy*=b.kind==='ball'?.997:.985;wallSpin(b,b.vy);wallFX(b.x,b.y)}
-  if(b.x+hitRadius>FIELD.right&&!enteringRightGoal){b.x=FIELD.right-hitRadius;markCollision(b,'wall-right');b.vx=-Math.abs(b.vx)*(b.kind==='ball'?.92:.84);b.vy*=b.kind==='ball'?.997:.985;wallSpin(b,b.vy);wallFX(b.x,b.y)}
+  if(b.x-hitRadius<FIELD.left&&!enteringLeftGoal){b.x=FIELD.left+hitRadius;resolveStaticContact(b,1,0,b.kind==='ball'?.92:.84,'wall-left');wallFX(b.x,b.y)}
+  if(b.x+hitRadius>FIELD.right&&!enteringRightGoal){b.x=FIELD.right-hitRadius;resolveStaticContact(b,-1,0,b.kind==='ball'?.92:.84,'wall-right');wallFX(b.x,b.y)}
   // Back walls at the end of each net tunnel, with the same rebound response as field walls.
-  if(beyondLeftGoal&&b.x-hitRadius<FIELD.left-goalDepth){b.x=FIELD.left-goalDepth+hitRadius;markCollision(b,'net-back-left');b.vx=Math.abs(b.vx)*(b.kind==='ball'?.92:.84);b.vy*=b.kind==='ball'?.997:.985;wallSpin(b,b.vy);wallFX(b.x,b.y)}
-  if(beyondRightGoal&&b.x+hitRadius>FIELD.right+goalDepth){b.x=FIELD.right+goalDepth-hitRadius;markCollision(b,'net-back-right');b.vx=-Math.abs(b.vx)*(b.kind==='ball'?.92:.84);b.vy*=b.kind==='ball'?.997:.985;wallSpin(b,b.vy);wallFX(b.x,b.y)}
+  if(beyondLeftGoal&&b.x-hitRadius<FIELD.left-goalDepth){b.x=FIELD.left-goalDepth+hitRadius;resolveStaticContact(b,1,0,b.kind==='ball'?.92:.84,'net-back-left');wallFX(b.x,b.y)}
+  if(beyondRightGoal&&b.x+hitRadius>FIELD.right+goalDepth){b.x=FIELD.right+goalDepth-hitRadius;resolveStaticContact(b,-1,0,b.kind==='ball'?.92:.84,'net-back-right');wallFX(b.x,b.y)}
   // The upper and lower edges of the net tunnel also behave like walls.
   if(beyondLeftGoal||beyondRightGoal){
-   if(contactY-hitRadius<goalOpeningTop){b.y=goalOpeningTop+hitRadius-contactOffset;markCollision(b,'net-side-top');b.vy=Math.abs(b.vy)*(b.kind==='ball'?.92:.84);b.vx*=b.kind==='ball'?.997:.985;wallSpin(b,b.vx);wallFX(b.x,b.y)}
-   if(contactY+hitRadius>FIELD.goalBottom){b.y=FIELD.goalBottom-hitRadius-contactOffset;markCollision(b,'net-side-bottom');b.vy=-Math.abs(b.vy)*(b.kind==='ball'?.92:.84);b.vx*=b.kind==='ball'?.997:.985;wallSpin(b,b.vx);wallFX(b.x,b.y)}
+   if(contactY-hitRadius<goalOpeningTop){b.y=goalOpeningTop+hitRadius-contactOffset;resolveStaticContact(b,0,1,b.kind==='ball'?.92:.84,'net-side-top');wallFX(b.x,b.y)}
+   if(contactY+hitRadius>FIELD.goalBottom){b.y=FIELD.goalBottom-hitRadius-contactOffset;resolveStaticContact(b,0,-1,b.kind==='ball'?.92:.84,'net-side-bottom');wallFX(b.x,b.y)}
   }
-  if(contactY-hitRadius<FIELD.top){b.y=FIELD.top+hitRadius-contactOffset;markCollision(b,'wall-top');b.vy=Math.abs(b.vy)*(b.kind==='ball'?.92:.84);b.vx*=b.kind==='ball'?.997:.985;wallSpin(b,b.vx);wallFX(b.x,b.y)}
-  if(contactY+hitRadius>FIELD.bottom){b.y=FIELD.bottom-hitRadius-contactOffset;markCollision(b,'wall-bottom');b.vy=-Math.abs(b.vy)*(b.kind==='ball'?.92:.84);b.vx*=b.kind==='ball'?.997:.985;wallSpin(b,b.vx);wallFX(b.x,b.y)}
+  if(contactY-hitRadius<FIELD.top){b.y=FIELD.top+hitRadius-contactOffset;resolveStaticContact(b,0,1,b.kind==='ball'?.92:.84,'wall-top');wallFX(b.x,b.y)}
+  if(contactY+hitRadius>FIELD.bottom){b.y=FIELD.bottom-hitRadius-contactOffset;resolveStaticContact(b,0,-1,b.kind==='ball'?.92:.84,'wall-bottom');wallFX(b.x,b.y)}
  }
  // Freeze all gameplay physics immediately when a return animation starts.
  if(bodies.some(b=>b._returnAnim))return;
@@ -389,9 +389,24 @@ function physics(h){
  else if(ball.x<FIELD.left-ball.r*.8){scoreB++;goal('B')}
 }
 function markCollision(b,key='wall'){b.frictionActive=true;if(b.kind==='ball'){const current=b._contactsThisTick||new Set();current.add(key);}}
-function wallSpin(b,tangentSpeed){
- // Visual spin only: it never changes the body's travel speed or direction.
- b.spin+=clamp(tangentSpeed*.018,-9,9)*(b.kind==='ball'?1.0:.7);
+function resolveStaticContact(body,nx,ny,restitution,key){
+ const normalSpeed=body.vx*nx+body.vy*ny;
+ if(normalSpeed>=0)return;
+ const normalImpulse=-(1+restitution)*normalSpeed/(body.inv||0);
+ body.vx+=normalImpulse*body.inv*nx;
+ body.vy+=normalImpulse*body.inv*ny;
+ markCollision(body,key);
+ const tx=-ny,ty=nx;
+ const radius=body.kind==='ball'?body.r:Math.max(0,body.r*.73416-8);
+ const invI=radius>0?2*body.inv/(radius*radius):0;
+ const tangentSpeed=body.vx*tx+body.vy*ty+body.spin*radius;
+ const denom=body.inv+radius*radius*invI;
+ let tangentImpulse=denom>0?-tangentSpeed/denom:0;
+ const friction=body.kind==='ball'?.20:.16;
+ tangentImpulse=clamp(tangentImpulse,-friction*normalImpulse,friction*normalImpulse);
+ body.vx+=tangentImpulse*body.inv*tx;
+ body.vy+=tangentImpulse*body.inv*ty;
+ body.spin=clamp(body.spin+tangentImpulse*radius*invI,-32,32);
 }
 function wallFX(x,y){if(Math.random()<.09)burst(x,y,'#53f5e8',3)}
 function collidePostWall(body,post){
@@ -410,17 +425,12 @@ function collidePostWall(body,post){
  const overlap=minDistance-dist;
  body.x+=nx*(overlap+.02);
  body.y+=ny*(overlap+.02);
- // Rebound like a fixed arena wall; the post itself never moves.
- const normalSpeed=body.vx*nx+body.vy*ny;
- if(normalSpeed<0){
-  const restitution=body.kind==='ball'?.92:.84;
-  body.vx-=(1+restitution)*normalSpeed*nx;
-  body.vy-=(1+restitution)*normalSpeed*ny;
-  markCollision(body,'goal-post');
-  const tangentSpeed=-body.vx*ny+body.vy*nx;
-  wallSpin(body,tangentSpeed);
-  wallFX(body.x,body.y);
- }
+ // Rebound and friction are solved against an immovable circular post.
+  if(body.vx*nx+body.vy*ny<0){
+   resolveStaticContact(body,nx,ny,body.kind==='ball'?.92:.84,'goal-post');
+   wallFX(body.x,body.y);
+  }
+
 }
 function collide(a,b){
  if(a._returnAnim||b._returnAnim)return;
