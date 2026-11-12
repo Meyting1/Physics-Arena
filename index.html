@@ -701,6 +701,8 @@ function drawTeamSelection(){
 }
 
 function draw(){
+ const formationButton=$('formationButton');
+ if(formationButton)formationButton.style.display=screenState==='game'?'grid':'none';
  if(screenState==='teamSelect'){
   ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.fillStyle='#061523';ctx.fillRect(0,0,canvas.width,canvas.height);
