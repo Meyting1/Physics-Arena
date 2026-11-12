@@ -705,13 +705,16 @@ function draw(){
  ctx.restore();
 
  if(selected&&gestureVector){
- const b=selected,len=Math.hypot(gestureVector.x,gestureVector.y),shownLength=Math.min(len,150),power=Math.min(len,150);
+ const b=selected,len=Math.hypot(gestureVector.x,gestureVector.y),power=Math.min(len,150);
  const nx=len>0?gestureVector.x/len:0,ny=len>0?gestureVector.y/len:0;
- // Draw exactly one guide. Its angle is identical to the vector passed to strike().
- ctx.save();ctx.strokeStyle='#69cdff';ctx.lineWidth=4;ctx.setLineDash([9,8]);ctx.globalAlpha=.95;
- ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.x+nx*shownLength,b.y+ny*shownLength);ctx.stroke();
- ctx.setLineDash([]);ctx.restore();ctx.globalAlpha=1;
-
+ const haloPower=twoFingerMode?clamp((power-50)/100,0,1):oneFingerAimPct;
+ const haloDiameter=2*(b.r+8+58*haloPower);
+ // The guide length tracks the halo's full diameter at every power level.
+ if(haloPower>0){
+  ctx.save();ctx.strokeStyle='#69cdff';ctx.lineWidth=4;ctx.setLineDash([9,8]);ctx.globalAlpha=.95;
+  ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.x+nx*haloDiameter,b.y+ny*haloDiameter);ctx.stroke();
+  ctx.setLineDash([]);ctx.restore();ctx.globalAlpha=1;
+ }
  }
  for(const p of particles){ctx.globalAlpha=clamp(p.life/45,0,1);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;
  // Highest visual layer: supplied goal PNGs sit over the ball and all gameplay artwork.
