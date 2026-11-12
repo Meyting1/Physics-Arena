@@ -111,7 +111,7 @@ function playPostClang(impactSpeed,headingForGoal=false){
   hit.playbackRate=.86;
   const source=audio.createMediaElementSource(hit);
   const gain=audio.createGain();
-  gain.gain.value=1.3*clamp(impactSpeed/650,.8,1.25);
+  gain.gain.value=2.6*clamp(impactSpeed/650,.8,1.25);
   source.connect(gain);gain.connect(audio.destination);
   hit.play().then(()=>{
    if(headingForGoal)return;
