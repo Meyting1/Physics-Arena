@@ -22,7 +22,7 @@ const $=id=>document.getElementById(id);
 const W=1529,H=688,wall=24,goalW=170,goalDepth=78;
 // Keep the complete supplied arena image, including the player-name and score panels.
 const FIELD={left:330,right:1240,top:113,bottom:677,goalTop:272,goalBottom:490};
-let dpr=1,scale=1,offsetX=0,offsetY=0,scoreA=0,scoreB=0,turn='A',aim=null,selected=null,shots=0,particles=[],trails=[],soundOn=true,audio=null,toastTimer=0,settleTimer=0;
+let dpr=1,scale=1,offsetX=0,offsetY=0,scoreA=0,scoreB=0,turn='A',aim=null,selected=null,shots=0,particles=[],trails=[],soundOn=true,audio=null,toastTimer=0,settleTimer=0,goalEvents=0;
 const bodies=[];
 // Four fixed circular goal posts. Their collision response uses the same circle-circle solver as player discs.
 const goalPostRadius=10.9;
@@ -100,17 +100,22 @@ function playPostClang(impactSpeed){
   const gain=audio.createGain();
   gain.gain.value=1.3*clamp(impactSpeed/650,.8,1.25);
   source.connect(gain);gain.connect(audio.destination);
+  const goalCountAtHit=goalEvents;
   hit.play().then(()=>{
    setTimeout(()=>{
-    if(!soundOn)return;
-    const reaction=new Audio('./react.mp3');
-    reaction.volume=1;
-    const reactionSource=audio.createMediaElementSource(reaction);
-    const reactionGain=audio.createGain();
-    reactionGain.gain.value=2.2;
-    reactionSource.connect(reactionGain);
-    reactionGain.connect(audio.destination);
-    reaction.play().catch(()=>{});
+    const waitForOutcome=()=>{
+     if(!soundOn||goalEvents!==goalCountAtHit)return;
+     if(moving()){setTimeout(waitForOutcome,50);return;}
+     const reaction=new Audio('./react.mp3');
+     reaction.volume=1;
+     const reactionSource=audio.createMediaElementSource(reaction);
+     const reactionGain=audio.createGain();
+     reactionGain.gain.value=2.2;
+     reactionSource.connect(reactionGain);
+     reactionGain.connect(audio.destination);
+     reaction.play().catch(()=>{});
+    };
+    waitForOutcome();
    },200);
   }).catch(()=>{});
  }catch{}
@@ -529,7 +534,7 @@ function collide(a,b){
  a.spin=clamp(a.spin,-32,32);b.spin=clamp(b.spin,-32,32);
  if(normalImpulse>95){playTone(clamp(105+normalImpulse*.20,120,420),.035,'sine',.01);if(normalImpulse>230)burst((a.x+b.x)/2,(a.y+b.y)/2,'#d8ffff',4)}
 }
-function goal(who){burst(W/2,who==='A'?18:H-18,who==='A'?'#53f5e8':'#ff4f9a',42);playTone(520,.28,'sawtooth',.04);setup();}
+function goal(who){goalEvents++;burst(W/2,who==='A'?18:H-18,who==='A'?'#53f5e8':'#ff4f9a',42);playTone(520,.28,'sawtooth',.04);setup();}
 function ai(){
  if(turn!=='B'||moving()||aim)return;
  const ball=bodies[2];
