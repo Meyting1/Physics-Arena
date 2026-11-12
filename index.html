@@ -297,7 +297,7 @@ function physics(h){
   b.spin*=Math.exp(-(b.kind==='ball'?1.7:2.8)*h);
   if(Math.hypot(b.vx,b.vy)<1.2){b.vx=0;b.vy=0;b.spin=0}
   // Player-piece contacts use the exact green dotted ring: radius r*0.73416-8, centered 11px below the artwork center.
-  const hitRadius=Math.max(0,b.r*.73416-8);
+  const hitRadius=b.kind==='ball'?b.r:Math.max(0,b.r*.73416-8);
   const contactOffset=b.kind==='ball'?0:11;
   const contactY=b.y+contactOffset;
   // The upper opening edge follows the visible upper-post collision circles.
@@ -399,7 +399,7 @@ function collide(a,b){
  };
  const ca=postContact?contactCenter(a):{x:a.x,y:a.y};
  const cb=postContact?contactCenter(b):{x:b.x,y:b.y};
- let dx=cb.x-ca.x,dy=cb.y-ca.y,dist=Math.hypot(dx,dy),min=Math.max(0,(a.r+b.r)*.73416-(ballContact?12:16));
+ let dx=cb.x-ca.x,dy=cb.y-ca.y,dist=Math.hypot(dx,dy),min=ballContact?a.r+b.r:Math.max(0,(a.r+b.r)*.73416-16);
  if(dist>=min)return;
  if(dist<1e-8){dx=1;dy=0;dist=1}
  const nx=dx/dist,ny=dy/dist,overlap=min-dist,total=a.inv+b.inv;
@@ -644,7 +644,7 @@ function draw(){
 
  // Collision rings for every player piece and the ball.
  for(const body of bodies){
-  const radius=Math.max(0,body.r*.73416-8);
+  const radius=body.kind==='ball'?body.r:Math.max(0,body.r*.73416-8);
   const centerY=body.y+(body.kind==='ball'?0:11);
   ctx.beginPath();
   ctx.arc(body.x,centerY,radius,0,Math.PI*2);
@@ -653,7 +653,7 @@ function draw(){
 
 
  // Post contact circles, centered on the adjusted post locations.
- const postInfluenceRadius=(goalPostRadius+13.2)*.73416-12;
+ const postInfluenceRadius=goalPostRadius+13.2;
  for(const post of goalPosts){
   const centerY=post.y+(post.y===FIELD.goalTop?19:0);
   ctx.beginPath();
