@@ -411,14 +411,16 @@ function resolveStaticContact(body,nx,ny,restitution,key){
  const tx=-ny,ty=nx;
  const radius=body.kind==='ball'?body.r:Math.max(0,body.r*.73416-8);
  const invI=radius>0?2*body.inv/(radius*radius):0;
- const tangentSpeed=body.vx*tx+body.vy*ty+body.spin*radius;
+ // The contact point is on the wall-facing side of the body (-normal).
+ // Its tangential velocity is therefore v_t - spin*radius.
+ const tangentSpeed=body.vx*tx+body.vy*ty-body.spin*radius;
  const denom=body.inv+radius*radius*invI;
  let tangentImpulse=denom>0?-tangentSpeed/denom:0;
  const friction=body.kind==='ball'?.20:.16;
  tangentImpulse=clamp(tangentImpulse,-friction*normalImpulse,friction*normalImpulse);
  body.vx+=tangentImpulse*body.inv*tx;
  body.vy+=tangentImpulse*body.inv*ty;
- body.spin=clamp(body.spin+tangentImpulse*radius*invI,-32,32);
+ body.spin=clamp(body.spin-tangentImpulse*radius*invI,-32,32);
 }
 function wallFX(x,y){if(Math.random()<.09)burst(x,y,'#53f5e8',3)}
 function collidePostWall(body,post){
@@ -729,7 +731,8 @@ drawGoalOverlay(goalLeftTexture,goalLeftBounds,FIELD.left-goalDepth,FIELD.goalTo
  particles=particles.filter(p=>p.life-->0);for(const p of particles){p.x+=p.vx;p.y+=p.vy;p.vx*=.96;p.vy*=.96}
  trails=trails.filter(t=>t.life-->0);
 }
-let last=0,accumulator=0,aiWait=0;const FIXED_STEP=1/120;
+// 360 Hz physics steps keep even fast ball/post contacts from skipping over thin collision shapes.
+let last=0,accumulator=0,aiWait=0;const FIXED_STEP=1/360;
 function frame(t){if(!last)last=t;const elapsed=Math.min((t-last)/1000,.05);last=t;accumulator+=elapsed;while(accumulator>=FIXED_STEP){if(moving())physics(FIXED_STEP);accumulator-=FIXED_STEP}if(!moving()&&turn==='B'){aiWait+=elapsed*60;if(aiWait>30){aiWait=0;ai()}}else if(turn!=='B')aiWait=0;draw();requestAnimationFrame(frame)}
 new ResizeObserver(resize).observe(canvas);resize();setup();requestAnimationFrame(frame);
 })();
