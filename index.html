@@ -13,6 +13,15 @@ canvas{display:block;width:100%;height:100%;max-width:none;border:0;border-radiu
 
 #formationButton{position:fixed;left:14px;bottom:14px;z-index:10;width:44px;height:44px;padding:0;display:grid;place-items:center;background:#fff;border:1px solid rgba(10,25,40,.2);border-radius:7px;box-shadow:0 2px 9px rgba(0,0,0,.28);color:#102638;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 #formationButton svg{width:25px;height:25px;display:block;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+#formationPanel{position:fixed;left:14px;bottom:68px;z-index:20;width:min(286px,calc(100vw - 28px));padding:10px;background:rgba(7,20,31,.97);border:1px solid rgba(105,220,220,.55);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.48);color:#eafaff;touch-action:pan-y}
+#formationPanel[hidden]{display:none}
+.formationPanelHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font:800 12px system-ui;letter-spacing:1px;color:#8ef4e8}
+#formationClose{width:26px;height:26px;border:0;border-radius:5px;background:#203849;color:#fff;font-size:21px;line-height:1}
+.formationGrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.formationOption{min-width:0;padding:5px;background:#122a3a;border:1px solid #38596b;border-radius:6px;color:#eafaff;text-align:left;display:flex;flex-direction:column;gap:3px;font:700 9px system-ui}
+.formationOption svg{width:100%;height:38px;display:block}
+.formationOption.active{border-color:#62f4df;background:#16434a;box-shadow:inset 0 0 0 1px #62f4df}
 </style>
 </head>
 <body>
@@ -45,6 +54,21 @@ canvas{display:block;width:100%;height:100%;max-width:none;border:0;border-radiu
 </g>
 </svg>
 </button>
+<div id="formationPanel" aria-label="Choose team formation" hidden>
+ <div class="formationPanelHead"><span>TEAM FORMATION</span><button id="formationClose" type="button" aria-label="Close">×</button></div>
+ <div class="formationGrid">
+  <button class="formationOption" type="button" data-formation="0"><span>01 · DEFENSIVE</span><svg viewBox="0 0 92 52" aria-hidden="true"><rect x="1" y="1" width="90" height="50" rx="3" fill="#123c31" stroke="#d5e8d8" stroke-width="1"/><path d="M46 1v50M46 17a9 9 0 1 0 0 18a9 9 0 1 0 0-18M1 14h9v24H1M91 14h-9v24h9" fill="none" stroke="#d5e8d8" stroke-width=".7" opacity=".75"/><g fill="#57e5d5" stroke="#eaffff" stroke-width=".7"><circle cx="9" cy="26" r="3.1"/><circle cx="25" cy="13" r="3.1"/><circle cx="25" cy="39" r="3.1"/><circle cx="39" cy="19" r="3.1"/><circle cx="39" cy="33" r="3.1"/></g></svg></button>
+  <button class="formationOption" type="button" data-formation="1"><span>02 · BALANCED</span><svg viewBox="0 0 92 52" aria-hidden="true"><rect x="1" y="1" width="90" height="50" rx="3" fill="#123c31" stroke="#d5e8d8" stroke-width="1"/><path d="M46 1v50M46 17a9 9 0 1 0 0 18a9 9 0 1 0 0-18M1 14h9v24H1M91 14h-9v24h9" fill="none" stroke="#d5e8d8" stroke-width=".7" opacity=".75"/><g fill="#57e5d5" stroke="#eaffff" stroke-width=".7"><circle cx="9" cy="26" r="3.1"/><circle cx="25" cy="15" r="3.1"/><circle cx="25" cy="37" r="3.1"/><circle cx="39" cy="15" r="3.1"/><circle cx="39" cy="37" r="3.1"/></g></svg></button>
+  <button class="formationOption" type="button" data-formation="2"><span>03 · ATTACKING</span><svg viewBox="0 0 92 52" aria-hidden="true"><rect x="1" y="1" width="90" height="50" rx="3" fill="#123c31" stroke="#d5e8d8" stroke-width="1"/><path d="M46 1v50M46 17a9 9 0 1 0 0 18a9 9 0 1 0 0-18M1 14h9v24H1M91 14h-9v24h9" fill="none" stroke="#d5e8d8" stroke-width=".7" opacity=".75"/><g fill="#57e5d5" stroke="#eaffff" stroke-width=".7"><circle cx="9" cy="26" r="3.1"/><circle cx="25" cy="12" r="3.1"/><circle cx="25" cy="26" r="3.1"/><circle cx="25" cy="40" r="3.1"/><circle cx="42" cy="26" r="3.1"/></g></svg></button>
+  <button class="formationOption" type="button" data-formation="3"><span>04 · WIDE</span><svg viewBox="0 0 92 52" aria-hidden="true"><rect x="1" y="1" width="90" height="50" rx="3" fill="#123c31" stroke="#d5e8d8" stroke-width="1"/><path d="M46 1v50M46 17a9 9 0 1 0 0 18a9 9 0 1 0 0-18M1 14h9v24H1M91 14h-9v24h9" fill="none" stroke="#d5e8d8" stroke-width=".7" opacity=".75"/><g fill="#57e5d5" stroke="#eaffff" stroke-width=".7"><circle cx="9" cy="26" r="3.1"/><circle cx="26" cy="10" r="3.1"/><circle cx="26" cy="42" r="3.1"/><circle cx="43" cy="15" r="3.1"/><circle cx="43" cy="37" r="3.1"/></g></svg></button>
+  <button class="formationOption" type="button" data-formation="4"><span>05 · COMPACT</span><svg viewBox="0 0 92 52" aria-hidden="true"><rect x="1" y="1" width="90" height="50" rx="3" fill="#123c31" stroke="#d5e8d8" stroke-width="1"/><path d="M46 1v50M46 17a9 9 0 1 0 0 18a9 9 0 1 0 0-18M1 14h9v24H1M91 14h-9v24h9" fill="none" stroke="#d5e8d8" stroke-width=".7" opacity=".75"/><g fill="#57e5d5" stroke="#eaffff" stroke-width=".7"><circle cx="9" cy="26" r="3.1"/><circle cx="23" cy="18" r="3.1"/><circle cx="23" cy="34" r="3.1"/><circle cx="37" cy="18" r="3.1"/><circle cx="37" cy="34" r="3.1"/></g></svg></button>
+  <button class="formationOption" type="button" data-formation="5"><span>06 · DIAMOND</span><svg viewBox="0 0 92 52" aria-hidden="true"><rect x="1" y="1" width="90" height="50" rx="3" fill="#123c31" stroke="#d5e8d8" stroke-width="1"/><path d="M46 1v50M46 17a9 9 0 1 0 0 18a9 9 0 1 0 0-18M1 14h9v24H1M91 14h-9v24h9" fill="none" stroke="#d5e8d8" stroke-width=".7" opacity=".75"/><g fill="#57e5d5" stroke="#eaffff" stroke-width=".7"><circle cx="9" cy="26" r="3.1"/><circle cx="25" cy="26" r="3.1"/><circle cx="34" cy="14" r="3.1"/><circle cx="34" cy="38" r="3.1"/><circle cx="43" cy="26" r="3.1"/></g></svg></button>
+  <button class="formationOption" type="button" data-formation="6"><span>07 · PRESSING</span><svg viewBox="0 0 92 52" aria-hidden="true"><rect x="1" y="1" width="90" height="50" rx="3" fill="#123c31" stroke="#d5e8d8" stroke-width="1"/><path d="M46 1v50M46 17a9 9 0 1 0 0 18a9 9 0 1 0 0-18M1 14h9v24H1M91 14h-9v24h9" fill="none" stroke="#d5e8d8" stroke-width=".7" opacity=".75"/><g fill="#57e5d5" stroke="#eaffff" stroke-width=".7"><circle cx="9" cy="26" r="3.1"/><circle cx="26" cy="13" r="3.1"/><circle cx="26" cy="39" r="3.1"/><circle cx="42" cy="20" r="3.1"/><circle cx="42" cy="32" r="3.1"/></g></svg></button>
+  <button class="formationOption" type="button" data-formation="7"><span>08 · COUNTER</span><svg viewBox="0 0 92 52" aria-hidden="true"><rect x="1" y="1" width="90" height="50" rx="3" fill="#123c31" stroke="#d5e8d8" stroke-width="1"/><path d="M46 1v50M46 17a9 9 0 1 0 0 18a9 9 0 1 0 0-18M1 14h9v24H1M91 14h-9v24h9" fill="none" stroke="#d5e8d8" stroke-width=".7" opacity=".75"/><g fill="#57e5d5" stroke="#eaffff" stroke-width=".7"><circle cx="9" cy="26" r="3.1"/><circle cx="23" cy="15" r="3.1"/><circle cx="23" cy="37" r="3.1"/><circle cx="38" cy="15" r="3.1"/><circle cx="38" cy="37" r="3.1"/></g></svg></button>
+  <button class="formationOption" type="button" data-formation="8"><span>09 · BOX</span><svg viewBox="0 0 92 52" aria-hidden="true"><rect x="1" y="1" width="90" height="50" rx="3" fill="#123c31" stroke="#d5e8d8" stroke-width="1"/><path d="M46 1v50M46 17a9 9 0 1 0 0 18a9 9 0 1 0 0-18M1 14h9v24H1M91 14h-9v24h9" fill="none" stroke="#d5e8d8" stroke-width=".7" opacity=".75"/><g fill="#57e5d5" stroke="#eaffff" stroke-width=".7"><circle cx="9" cy="26" r="3.1"/><circle cx="27" cy="15" r="3.1"/><circle cx="27" cy="37" r="3.1"/><circle cx="42" cy="15" r="3.1"/><circle cx="42" cy="37" r="3.1"/></g></svg></button>
+  <button class="formationOption" type="button" data-formation="9"><span>10 · FLEX</span><svg viewBox="0 0 92 52" aria-hidden="true"><rect x="1" y="1" width="90" height="50" rx="3" fill="#123c31" stroke="#d5e8d8" stroke-width="1"/><path d="M46 1v50M46 17a9 9 0 1 0 0 18a9 9 0 1 0 0-18M1 14h9v24H1M91 14h-9v24h9" fill="none" stroke="#d5e8d8" stroke-width=".7" opacity=".75"/><g fill="#57e5d5" stroke="#eaffff" stroke-width=".7"><circle cx="9" cy="26" r="3.1"/><circle cx="21" cy="13" r="3.1"/><circle cx="21" cy="39" r="3.1"/><circle cx="36" cy="22" r="3.1"/><circle cx="43" cy="33" r="3.1"/></g></svg></button>
+ </div>
+</div>
 <script>
 (()=>{
 'use strict';
@@ -107,7 +131,7 @@ function setup(){
  bodies.push(make(W*.76,H/2,47.15172,5,'#ff4f9a','strikerB'));
  bodies.push(make((FIELD.left+FIELD.right)/2,(FIELD.top+FIELD.bottom)/2,13.2,.82,'#f5fbff','ball'));
  for(let i=0;i<4;i++){const y=H/2+(i-1.5)*76;bodies.push(make(W*.38,y,47.15172,5,'#1fb9c9','discA'));bodies.push(make(W*.62,y,47.15172,5,'#c73578','discB'));}
- particles=[];trails=[];aim=null;selected=null;turn='A';settleTimer=0;updateTurn();
+ particles=[];trails=[];aim=null;selected=null;turn='A';settleTimer=0;applyFormation(selectedFormation);updateTurn();
 }
 function resize(){
  const rect=canvas.getBoundingClientRect();dpr=Math.min(devicePixelRatio||1,2);
@@ -163,6 +187,31 @@ function burst(x,y,color,n=12){for(let i=0;i<n;i++){let a=Math.random()*Math.PI*
 function showToast(){}
 function strike(b,dx,dy,aimPctOverride=null){const len=Math.hypot(dx,dy);if(len<2.5)return;const aimPct=aimPctOverride===null?clamp((len-50)/100,0,1):clamp(aimPctOverride,0,1);const aimPower=b.kind==='ball'?Math.pow(aimPct,1.8):aimPct;const power=1100*aimPower*(b.kind==='ball'?.65:1)*1.10*1.5;b.vx=dx/len*power;b.vy=dy/len*power;b.spin=0;b.visualRoll=0;const restingBall=bodies.find(body=>body.kind==='ball');if(restingBall)restingBall.visualRoll=0;b.lowAimDrag=b.kind==='ball'?0:10*Math.pow(1-aimPct,2)*(aimPct<0.5?0.7:aimPct>0.5?1.3:1);b.frictionActive=false;b.ballCollisionCount=0;b.lastBallCollisionTick=-1;if(b.kind!=='ball'){const ball=bodies.find(body=>body.kind==='ball');if(ball){ball.frictionActive=false;ball.ballCollisionCount=0;ball._contactsLastTick=new Set();ball._contactsThisTick=new Set();}}turn=turn==='A'?'B':'A';shots++;updateTurn();playTone(180,.09,'triangle',.05);burst(b.x,b.y,b.color,7)}
 const teamA=[0,3,5,7,9],teamB=[1,4,6,8,10];
+const formations=[
+ [[.08,.50],[.38,.18],[.38,.82],[.76,.32],[.76,.68]],
+ [[.10,.50],[.34,.22],[.34,.78],[.68,.22],[.68,.78]],
+ [[.12,.50],[.30,.16],[.30,.50],[.30,.84],[.72,.50]],
+ [[.10,.50],[.42,.12],[.42,.88],[.78,.20],[.78,.80]],
+ [[.08,.50],[.28,.30],[.28,.70],[.54,.30],[.54,.70]],
+ [[.10,.50],[.34,.50],[.55,.22],[.55,.78],[.78,.50]],
+ [[.08,.50],[.36,.18],[.36,.82],[.72,.36],[.72,.64]],
+ [[.08,.50],[.30,.25],[.30,.75],[.62,.25],[.62,.75]],
+ [[.10,.50],[.40,.25],[.40,.75],[.70,.25],[.70,.75]],
+ [[.10,.50],[.26,.18],[.26,.82],[.58,.38],[.78,.62]]
+];
+let selectedFormation=0,formationPanelOpen=false;
+function applyFormation(index){
+ const layout=formations[index];if(!layout)return;
+ const mid=(FIELD.left+FIELD.right)/2;
+ teamA.forEach((bodyIndex,i)=>{
+  const b=bodies[bodyIndex],p=layout[i];if(!b||!p)return;
+  b.x=FIELD.left+55+p[0]*(mid-FIELD.left-110);
+  b.y=FIELD.top+55+p[1]*(FIELD.bottom-FIELD.top-110);
+  b.vx=0;b.vy=0;b.spin=0;b.angle=0;b.frictionActive=false;
+ });
+ selectedFormation=index;selected=null;gestureVector=null;aim=null;
+ document.querySelectorAll('.formationOption').forEach((el,i)=>el.classList.toggle('active',i===index));
+}
 // Clean aiming controller: one finger keeps the original pull-back gesture;
 // with two fingers, movement from BOTH fingers contributes to the same aim vector.
 // Two-control aiming: finger 1 sets pull strength; finger 2 sets shot direction.
@@ -703,6 +752,7 @@ function drawTeamSelection(){
 function draw(){
  const formationButton=$('formationButton');
  if(formationButton)formationButton.style.display=screenState==='game'?'grid':'none';
+ const formationPanel=$('formationPanel');if(formationPanel&&screenState!=='game'){formationPanel.hidden=true;formationPanelOpen=false;}
  if(screenState==='teamSelect'){
   ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.fillStyle='#061523';ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -808,6 +858,10 @@ drawGoalOverlay(goalLeftTexture,goalLeftBounds,FIELD.left-goalDepth,FIELD.goalTo
 // 360 Hz physics steps keep even fast ball/post contacts from skipping over thin collision shapes.
 let last=0,accumulator=0,aiWait=0;const FIXED_STEP=1/360;
 function frame(t){if(!last)last=t;const elapsed=Math.min((t-last)/1000,.05);last=t;accumulator+=elapsed;while(accumulator>=FIXED_STEP){if(moving())physics(FIXED_STEP);accumulator-=FIXED_STEP}if(!moving()&&turn==='B'){aiWait+=elapsed*60;if(aiWait>30){aiWait=0;ai()}}else if(turn!=='B')aiWait=0;draw();requestAnimationFrame(frame)}
+const formationButton=$('formationButton'),formationPanel=$('formationPanel');
+formationButton.addEventListener('click',()=>{if(screenState!=='game')return;formationPanelOpen=!formationPanelOpen;formationPanel.hidden=!formationPanelOpen;});
+$('formationClose').addEventListener('click',()=>{formationPanelOpen=false;formationPanel.hidden=true;});
+formationPanel.addEventListener('click',e=>{const option=e.target.closest('.formationOption');if(!option)return;if(moving())return;applyFormation(Number(option.dataset.formation));formationPanelOpen=false;formationPanel.hidden=true;});
 new ResizeObserver(resize).observe(canvas);resize();setup();requestAnimationFrame(frame);
 })();
 </script>
