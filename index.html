@@ -144,13 +144,13 @@ goalRightTexture.onload=()=>{goalRightBounds=goalAlphaBounds(goalRightTexture)};
 goalLeftTexture.src='goal-left.png';goalRightTexture.src='goal-right.png';
 
 const make=(x,y,r,mass,color,kind)=>({x,y,vx:0,vy:0,r,mass,color,kind,inv:1/mass,spin:0,angle:0,frictionActive:false});
-function setup(){
+function setup(startingTurn='A'){
  bodies.length=0;
  bodies.push(make(W*.24,H/2,47.15172,5,'#53f5e8','strikerA'));
  bodies.push(make(W*.76,H/2,47.15172,5,'#ff4f9a','strikerB'));
  bodies.push(make((FIELD.left+FIELD.right)/2,(FIELD.top+FIELD.bottom)/2,13.2,.82,'#f5fbff','ball'));
  for(let i=0;i<4;i++){const y=H/2+(i-1.5)*76;bodies.push(make(W*.38,y,47.15172,5,'#1fb9c9','discA'));bodies.push(make(W*.62,y,47.15172,5,'#c73578','discB'));}
- particles=[];trails=[];aim=null;selected=null;turn='A';settleTimer=0;applyFormation(selectedFormation);updateTurn();
+ particles=[];trails=[];aim=null;selected=null;turn=startingTurn;settleTimer=0;applyFormation(selectedFormation);updateTurn();
 }
 function resize(){
  const rect=canvas.getBoundingClientRect();dpr=Math.min(devicePixelRatio||1,2);
@@ -658,6 +658,8 @@ function collide(a,b){
 function goal(who){
  // A goal takes priority: discard any pending post-hit crowd reaction.
  pendingPostReaction=false;
+ // The side that conceded the goal takes the next centre restart.
+ const nextKickoffTurn=who==='A'?'B':'A';
  goalEvents++;
  if(pendingFormation!==null){selectedFormation=pendingFormation;pendingFormation=null;}
  // Preserve every disc's post-goal position, reset the match state, then animate
@@ -665,7 +667,7 @@ function goal(who){
  const startPositions=bodies.map(b=>({x:b.x,y:b.y,kind:b.kind}));
  burst(W/2,who==='A'?18:H-18,who==='A'?'#53f5e8':'#ff4f9a',42);
  if(soundOn){goalSound.currentTime=0;goalSound.play().catch(()=>{});}
- setup();
+ setup(nextKickoffTurn);
  bodies.forEach((body,index)=>{
   if(body.kind==='ball')return;
   const start=startPositions[index];
@@ -679,11 +681,56 @@ function goal(who){
 function ai(){
  if(turn!=='B'||moving()||aim)return;
  const ball=bodies[2];
- // The opponent can choose any of its four discs, not just its starting striker.
- const striker=teamB.map(i=>bodies[i]).sort((a,b)=>Math.hypot(a.x-ball.x,a.y-ball.y)-Math.hypot(b.x-ball.x,b.y-ball.y))[0];
- const dx=ball.x+58-striker.x,dy=ball.y-striker.y;
- const len=Math.hypot(dx,dy)||1;
- strike(striker,dx/len*108,dy/len*108);
+ // Team B attacks the left goal. Plan a clean, full-power contact that sends
+ // the ball toward several useful points inside the scoring mouth.
+ const goalTargets=[
+  FIELD.goalTop+ball.r*.9,
+  (FIELD.goalTop+FIELD.goalBottom)/2,
+  FIELD.goalBottom-ball.r*.9
+ ];
+ const allDiscs=teamA.concat(teamB).map(i=>bodies[i]).filter(Boolean);
+ let best=null;
+ for(const discIndex of teamB){
+  const disc=bodies[discIndex];if(!disc)continue;
+  for(const targetY of goalTargets){
+   const tx=FIELD.left-ball.r*1.15-ball.x,ty=targetY-ball.y;
+   const targetLen=Math.hypot(tx,ty);if(targetLen<1)continue;
+   const ux=tx/targetLen,uy=ty/targetLen;
+   const contactX=ball.x-ux*(disc.r+ball.r+2);
+   const contactY=ball.y-uy*(disc.r+ball.r+2);
+   if(contactX<FIELD.left+disc.r||contactX>FIELD.right-disc.r||
+      contactY<FIELD.top+disc.r||contactY>FIELD.bottom-disc.r)continue;
+   const dx=contactX-disc.x,dy=contactY-disc.y,dist=Math.hypot(dx,dy);
+   if(dist<1)continue;
+   const dirX=dx/dist,dirY=dy/dist;
+   // Penalize a teammate or opponent sitting directly between the shooter
+   // and the intended contact point; the physics engine resolves the impact.
+   let obstruction=0;
+   for(const other of allDiscs){
+    if(other===disc)continue;
+    const ox=other.x-disc.x,oy=other.y-disc.y;
+    const along=clamp((ox*dx+oy*dy)/(dist*dist),0,1);
+    const near=Math.hypot(ox-along*dx,oy-along*dy);
+    if(along>.04&&along<.96&&near<other.r*.72)obstruction+=1;
+   }
+   const score=dist+obstruction*900+targetLen*.025;
+   if(!best||score<best.score)best={disc,dirX,dirY,score};
+  }
+ }
+ // If every direct scoring lane is blocked by the current formation, take
+ // the strongest available approach toward the centre of the left goal.
+ if(!best){
+  const targetY=(FIELD.goalTop+FIELD.goalBottom)/2;
+  for(const discIndex of teamB){
+   const disc=bodies[discIndex];if(!disc)continue;
+   const dx=ball.x-(disc.r+ball.r+2)-disc.x;
+   const dy=ball.y-disc.y;
+   const dist=Math.hypot(dx,dy)||1;
+   const score=dist;
+   if(!best||score<best.score)best={disc,dirX:dx/dist,dirY:dy/dist,score};
+  }
+ }
+ if(best)strike(best.disc,best.dirX*150,best.dirY*150,1);
 }
 function drawArenaEdits(){
 // Rebuild only the top HUD. The original pitch and side artwork remain untouched.
