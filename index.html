@@ -478,9 +478,11 @@ function physics(h){
     const factor=Math.exp(-2.5*h);
     b.vx*=factor;b.vy*=factor;
    }
-  // A small Magnus-like curve is driven by spin, not an arbitrary per-frame boost.
+  // Magnus curve: lateral acceleration is proportional to spin and forward speed.
+  // Contact friction creates spin; harder angled impacts can therefore produce stronger curve.
   if(b.kind==='ball'){
-   const curve=clamp(b.spin*.00075,-.22,.22),vx=b.vx,vy=b.vy;
+   const magnusK=.006;
+   const curve=clamp(b.spin*magnusK,-.22,.22),vx=b.vx,vy=b.vy;
    b.vx+=-vy*curve*h;b.vy+=vx*curve*h;
   }
   b.x+=b.vx*h;b.y+=b.vy*h;
