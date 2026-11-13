@@ -420,6 +420,28 @@ window.addEventListener('pointermove',e=>{if(e.pointerType!=='touch')moveAim(e.p
 window.addEventListener('pointerup',e=>{if(e.pointerType!=='touch')finishAim(e.pointerId,false);},{capture:true});
 window.addEventListener('pointercancel',e=>{if(e.pointerType!=='touch')finishAim(e.pointerId,true);},{capture:true});
 let physicsTick=0;
+function resolveArenaWalls(b){
+ if(b._returnAnim)return;
+ const hitRadius=b.kind==='ball'?b.r:Math.max(0,b.r*.73416-8);
+ const contactOffset=b.kind==='ball'?0:6;
+ const contactY=b.y+contactOffset;
+ const goalOpeningTop=FIELD.goalTop+19;
+ const inGoalMouth=contactY>goalOpeningTop&&contactY<FIELD.goalBottom;
+ const beyondLeftGoal=b.x<FIELD.left&&inGoalMouth;
+ const beyondRightGoal=b.x>FIELD.right&&inGoalMouth;
+ const enteringLeftGoal=inGoalMouth&&b.x-hitRadius<FIELD.left;
+ const enteringRightGoal=inGoalMouth&&b.x+hitRadius>FIELD.right;
+ if(b.x-hitRadius<FIELD.left&&!enteringLeftGoal){b.x=FIELD.left+hitRadius;resolveStaticContact(b,1,0,b.kind==='ball'?.92:.84,'wall-left');wallFX(b.x,b.y)}
+ if(b.x+hitRadius>FIELD.right&&!enteringRightGoal){b.x=FIELD.right-hitRadius;resolveStaticContact(b,-1,0,b.kind==='ball'?.92:.84,'wall-right');wallFX(b.x,b.y)}
+ if(beyondLeftGoal&&b.x-hitRadius<FIELD.left-goalDepth){b.x=FIELD.left-goalDepth+hitRadius;resolveStaticContact(b,1,0,b.kind==='ball'?.92:.84,'net-back-left');wallFX(b.x,b.y)}
+ if(beyondRightGoal&&b.x+hitRadius>FIELD.right+goalDepth){b.x=FIELD.right+goalDepth-hitRadius;resolveStaticContact(b,-1,0,b.kind==='ball'?.92:.84,'net-back-right');wallFX(b.x,b.y)}
+ if(beyondLeftGoal||beyondRightGoal){
+  if(contactY-hitRadius<goalOpeningTop){b.y=goalOpeningTop+hitRadius-contactOffset;resolveStaticContact(b,0,1,b.kind==='ball'?.92:.84,'net-side-top');wallFX(b.x,b.y)}
+  if(contactY+hitRadius>FIELD.goalBottom){b.y=FIELD.goalBottom-hitRadius-contactOffset;resolveStaticContact(b,0,-1,b.kind==='ball'?.92:.84,'net-side-bottom');wallFX(b.x,b.y)}
+ }
+ if(contactY-hitRadius<FIELD.top){b.y=FIELD.top+hitRadius-contactOffset;resolveStaticContact(b,0,1,b.kind==='ball'?.92:.84,'wall-top');wallFX(b.x,b.y)}
+ if(contactY+hitRadius>FIELD.bottom){b.y=FIELD.bottom-hitRadius-contactOffset;resolveStaticContact(b,0,-1,b.kind==='ball'?.92:.84,'wall-bottom');wallFX(b.x,b.y)}
+}
 function physics(h){
   physicsTick++;
   // Keep the goal scene still for 0.4 seconds before the kickoff reset begins.
@@ -437,7 +459,7 @@ function physics(h){
    return;
   }
   for(const b of bodies)if(b.kind==='ball')b._contactsThisTick=new Set();
- // h is a fixed 1/120-second step. Velocities are pixels per second.
+ // h is the fixed 1/360-second step. Velocities are pixels per second.
  for(const b of bodies){
   const speed=Math.hypot(b.vx,b.vy);
   if(speed>0&&b.kind!=='ball'&&!b.frictionActive&&b.lowAimDrag>0){
@@ -476,29 +498,7 @@ function physics(h){
   const hitRadius=b.kind==='ball'?b.r:Math.max(0,b.r*.73416-8);
   const contactOffset=b.kind==='ball'?0:6;
   const contactY=b.y+contactOffset;
-  // The upper opening edge follows the visible upper-post collision circles.
-  const goalOpeningTop=FIELD.goalTop+19;
-  const inGoalMouth=contactY>goalOpeningTop&&contactY<FIELD.goalBottom;
-  // The white goal line is open for every body; the net's far end is the new wall.
-  const beyondLeftGoal=b.x<FIELD.left&&inGoalMouth;
-  const beyondRightGoal=b.x>FIELD.right&&inGoalMouth;
-  // Open the side-wall collision as soon as the disc's leading edge reaches the goal mouth.
-  // Checking only the center here caused the disc to rebound before it could cross the line.
-  const enteringLeftGoal=inGoalMouth&&b.x-hitRadius<FIELD.left;
-  const enteringRightGoal=inGoalMouth&&b.x+hitRadius>FIELD.right;
-
-  if(b.x-hitRadius<FIELD.left&&!enteringLeftGoal){b.x=FIELD.left+hitRadius;resolveStaticContact(b,1,0,b.kind==='ball'?.92:.84,'wall-left');wallFX(b.x,b.y)}
-  if(b.x+hitRadius>FIELD.right&&!enteringRightGoal){b.x=FIELD.right-hitRadius;resolveStaticContact(b,-1,0,b.kind==='ball'?.92:.84,'wall-right');wallFX(b.x,b.y)}
-  // Back walls at the end of each net tunnel, with the same rebound response as field walls.
-  if(beyondLeftGoal&&b.x-hitRadius<FIELD.left-goalDepth){b.x=FIELD.left-goalDepth+hitRadius;resolveStaticContact(b,1,0,b.kind==='ball'?.92:.84,'net-back-left');wallFX(b.x,b.y)}
-  if(beyondRightGoal&&b.x+hitRadius>FIELD.right+goalDepth){b.x=FIELD.right+goalDepth-hitRadius;resolveStaticContact(b,-1,0,b.kind==='ball'?.92:.84,'net-back-right');wallFX(b.x,b.y)}
-  // The upper and lower edges of the net tunnel also behave like walls.
-  if(beyondLeftGoal||beyondRightGoal){
-   if(contactY-hitRadius<goalOpeningTop){b.y=goalOpeningTop+hitRadius-contactOffset;resolveStaticContact(b,0,1,b.kind==='ball'?.92:.84,'net-side-top');wallFX(b.x,b.y)}
-   if(contactY+hitRadius>FIELD.goalBottom){b.y=FIELD.goalBottom-hitRadius-contactOffset;resolveStaticContact(b,0,-1,b.kind==='ball'?.92:.84,'net-side-bottom');wallFX(b.x,b.y)}
-  }
-  if(contactY-hitRadius<FIELD.top){b.y=FIELD.top+hitRadius-contactOffset;resolveStaticContact(b,0,1,b.kind==='ball'?.92:.84,'wall-top');wallFX(b.x,b.y)}
-  if(contactY+hitRadius>FIELD.bottom){b.y=FIELD.bottom-hitRadius-contactOffset;resolveStaticContact(b,0,-1,b.kind==='ball'?.92:.84,'wall-bottom');wallFX(b.x,b.y)}
+  resolveArenaWalls(b);
  }
  // Freeze all gameplay physics immediately when a return animation starts.
  if(bodies.some(b=>b._returnAnim))return;
@@ -547,6 +547,9 @@ function physics(h){
  for(let pass=0;pass<4;pass++){
   for(let i=0;i<bodies.length;i++)for(let j=i+1;j<bodies.length;j++)collide(bodies[i],bodies[j]);
   // Goal posts use the same fixed-obstacle rebound response as the arena walls.
+  // Re-solve boundaries after body contacts in this same tick. This lets a
+  // ball pressed against a wall receive the wall and disc impulses together.
+  for(const body of bodies)resolveArenaWalls(body);
   for(const body of bodies)for(const post of goalPosts)collidePostWall(body,post);
  }
  for(const b of bodies)if(b.kind==='ball')b._contactsLastTick=b._contactsThisTick;
