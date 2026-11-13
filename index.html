@@ -201,7 +201,7 @@ const formations=[
  [[.10,.50],[.40,.25],[.40,.75],[.70,.25],[.70,.75]],
  [[.10,.50],[.26,.18],[.26,.82],[.58,.38],[.78,.62]]
 ];
-let selectedFormation=0,formationPanelOpen=false;
+let selectedFormation=0,pendingFormation=null,formationPanelOpen=false;
 function applyFormation(index){
  const layout=formations[index];if(!layout)return;
  const mid=(FIELD.left+FIELD.right)/2;
@@ -624,7 +624,7 @@ function collide(a,b){
  a.spin=clamp(a.spin,-32,32);b.spin=clamp(b.spin,-32,32);
  if(normalImpulse>95){playTone(clamp(105+normalImpulse*.20,120,420),.035,'sine',.01);if(normalImpulse>230)burst((a.x+b.x)/2,(a.y+b.y)/2,'#d8ffff',4)}
 }
-function goal(who){goalEvents++;burst(W/2,who==='A'?18:H-18,who==='A'?'#53f5e8':'#ff4f9a',42);playTone(520,.28,'sawtooth',.04);setup();}
+function goal(who){goalEvents++;if(pendingFormation!==null){selectedFormation=pendingFormation;pendingFormation=null;}burst(W/2,who==='A'?18:H-18,who==='A'?'#53f5e8':'#ff4f9a',42);playTone(520,.28,'sawtooth',.04);setup();}
 function ai(){
  if(turn!=='B'||moving()||aim)return;
  const ball=bodies[2];
@@ -863,7 +863,7 @@ function frame(t){if(!last)last=t;const elapsed=Math.min((t-last)/1000,.05);last
 const formationButton=$('formationButton'),formationPanel=$('formationPanel');
 formationButton.addEventListener('click',()=>{if(screenState!=='game')return;playClickSound();formationPanelOpen=!formationPanelOpen;formationPanel.hidden=!formationPanelOpen;});
 $('formationClose').addEventListener('click',()=>{formationPanelOpen=false;formationPanel.hidden=true;});
-formationPanel.addEventListener('click',e=>{const option=e.target.closest('.formationOption');if(!option)return;if(moving())return;playClickSound();applyFormation(Number(option.dataset.formation));formationPanelOpen=false;formationPanel.hidden=true;});
+formationPanel.addEventListener('click',e=>{const option=e.target.closest('.formationOption');if(!option)return;playClickSound();pendingFormation=Number(option.dataset.formation);formationPanel.querySelectorAll('.formationOption').forEach((el,i)=>el.classList.toggle('active',i===(pendingFormation===null?selectedFormation:pendingFormation)));formationPanelOpen=false;formationPanel.hidden=true;});
 new ResizeObserver(resize).observe(canvas);resize();setup();requestAnimationFrame(frame);
 })();
 </script>
