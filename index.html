@@ -665,9 +665,9 @@ function collide(a,b){
  if(normalImpulse>95){playTone(clamp(105+normalImpulse*.20,120,420),.035,'sine',.01);if(normalImpulse>230)burst((a.x+b.x)/2,(a.y+b.y)/2,'#d8ffff',4)}
 }
 function restartAfterInvalidKickoffGoal(shooter){
- // Hold the scene for 0.4 seconds before returning the ball and pieces to kickoff.
+ // Hold the scene for 0.7 seconds before returning the ball and pieces to kickoff.
  firstKickoffShotInProgress=false;firstKickoffShotPending=false;pendingPostReaction=false;
- pendingKickoffReset={shooter,startPositions:bodies.map(b=>({x:b.x,y:b.y})),remaining:.4};
+ pendingKickoffReset={shooter,startPositions:bodies.map(b=>({x:b.x,y:b.y})),remaining:.7};
 }
 function completeInvalidKickoffReset(){
  if(!pendingKickoffReset)return;
