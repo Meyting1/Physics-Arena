@@ -149,7 +149,7 @@ function resize(){
 function pos(e){const r=canvas.getBoundingClientRect();const sx=(e.clientX-r.left)*dpr,sy=(e.clientY-r.top)*dpr;return{x:(sy-offsetY)/scale,y:H-(sx-offsetX)/scale}}
 function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
 function updateTurn(){}
-const BALL_REST_SPEED=.8; // Stop imperceptibly slow ball drift without changing rolling friction.
+const BALL_REST_SPEED=1.2; // End visually imperceptible ball drift sooner without changing rolling friction.
 function moving(){return bodies.some(b=>b._returnAnim||Math.hypot(b.vx,b.vy)>(b.kind==='ball'?BALL_REST_SPEED:.8))}
 function playTone(freq=260,dur=.06,type='sine',vol=.035){if(!soundOn)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume().catch(()=>{});let o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=freq;g.gain.value=vol;o.connect(g);g.connect(audio.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);o.stop(audio.currentTime+dur)}catch{}}
 // Short, consistent UI click used only by team and formation controls.
