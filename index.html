@@ -174,17 +174,17 @@ function playPostClang(impactSpeed,headingForGoal=false){
   gain.gain.value=2.6*clamp(impactSpeed/650,.8,1.25);
   source.connect(gain);gain.connect(audio.destination);
   hit.play().catch(()=>{});
-  if(!headingForGoal){
-   setTimeout(()=>{
-    if(!soundOn)return;
-    try{
-     const reaction=new Audio('./react.mp3');
-     reaction.preload='auto';
-     reaction.volume=1;
-     reaction.play().catch(()=>{});
-    }catch{}
-   },200);
-  }
+  // Play one of the three crowd reactions only after the post-impact sound ends.
+  hit.addEventListener('ended',()=>{
+   if(!soundOn)return;
+   try{
+    const reactions=['./react.mp3','./react2.mp3','./react3.mp3'];
+    const reaction=new Audio(reactions[Math.floor(Math.random()*reactions.length)]);
+    reaction.preload='auto';
+    reaction.volume=1;
+    reaction.play().catch(()=>{});
+   }catch{}
+  },{once:true});
  }catch{}
 }
 function burst(x,y,color,n=12){for(let i=0;i<n;i++){let a=Math.random()*Math.PI*2,s=1+Math.random()*5;particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:35+Math.random()*20,color,r:1+Math.random()*3})}}
