@@ -486,7 +486,7 @@ function physics(h){
    // increase curvature; lighter bodies accelerate more under the same lift force.
    const referenceMass=.82;
    const magnusK=.006*10.67742*(referenceMass/b.mass);
-   const curve=clamp(b.spin*magnusK,-.22,.22),vx=b.vx,vy=b.vy;
+   const curve=clamp(b.spin*magnusK,-.30,.30),vx=b.vx,vy=b.vy;
    b.vx+=-vy*curve*h;b.vy+=vx*curve*h;
   }
   b.x+=b.vx*h;b.y+=b.vy*h;
