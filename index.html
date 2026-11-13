@@ -79,10 +79,22 @@ const W=1529,H=688,wall=24,goalW=170,goalDepth=78;
 const FIELD={left:330,right:1240,top:113,bottom:677,goalTop:272,goalBottom:490};
 let dpr=1,scale=1,offsetX=0,offsetY=0,scoreA=0,scoreB=0,turn='A',aim=null,selected=null,shots=0,particles=[],trails=[],soundOn=true,audio=null,toastTimer=0,settleTimer=0,goalEvents=0;
 let pendingPostReaction=false;
-// Preload all crowd reactions before gameplay so the chosen clip starts instantly at ball stop.
-const postReactionSounds=['./react.mp3','./react2.mp3','./react3.mp3'].map(src=>{
+// Preload crowd reactions as audio elements and fetch their bytes for instant WebAudio playback.
+const postReactionUrls=['./react.mp3','./react2.mp3','./react3.mp3'];
+const postReactionSounds=postReactionUrls.map(src=>{
  const sound=new Audio(src);sound.preload='auto';sound.load();return sound;
 });
+const postReactionDataPromise=Promise.all(postReactionUrls.map(async src=>{
+ const response=await fetch(src);if(!response.ok)throw new Error('Reaction audio failed to load');return response.arrayBuffer();
+})).catch(()=>null);
+let postReactionBuffers=null,postReactionDecodePromise=null;
+function preparePostReactionBuffers(){
+ if(!audio||postReactionDecodePromise)return;
+ postReactionDecodePromise=postReactionDataPromise.then(data=>{
+  if(!data)return;
+  return Promise.all(data.map(buffer=>audio.decodeAudioData(buffer.slice(0)))).then(buffers=>{postReactionBuffers=buffers;});
+ }).catch(()=>{});
+}
 const bodies=[];
 // Four fixed circular goal posts. Their collision response uses the same circle-circle solver as player discs.
 const goalPostRadius=10.9;
@@ -151,7 +163,7 @@ function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
 function updateTurn(){}
 const BALL_REST_SPEED=1.2; // End visually imperceptible ball drift sooner without changing rolling friction.
 function moving(){return bodies.some(b=>b._returnAnim||Math.hypot(b.vx,b.vy)>(b.kind==='ball'?BALL_REST_SPEED:.8))}
-function playTone(freq=260,dur=.06,type='sine',vol=.035){if(!soundOn)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume().catch(()=>{});let o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=freq;g.gain.value=vol;o.connect(g);g.connect(audio.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);o.stop(audio.currentTime+dur)}catch{}}
+function playTone(freq=260,dur=.06,type='sine',vol=.035){if(!soundOn)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();preparePostReactionBuffers();if(audio.state==='suspended')audio.resume().catch(()=>{});let o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=freq;g.gain.value=vol;o.connect(g);g.connect(audio.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);o.stop(audio.currentTime+dur)}catch{}}
 // Short, consistent UI click used only by team and formation controls.
 function playClickSound(){playTone(680,.035,'square',.018)}
 function ballTrajectoryEntersGoal(ball){
@@ -172,6 +184,7 @@ function playPostClang(impactSpeed){
  pendingPostReaction=true;
  try{
   audio=audio||new(window.AudioContext||window.webkitAudioContext)();
+  preparePostReactionBuffers();
   if(audio.state==='suspended')audio.resume().catch(()=>{});
   const hit=new Audio('./ball.m4a');
   hit.preload='auto';
@@ -188,9 +201,16 @@ function playPendingPostReaction(){
  pendingPostReaction=false;
  if(!soundOn)return;
  try{
-  const reaction=postReactionSounds[Math.floor(Math.random()*postReactionSounds.length)];
-  reaction.pause();reaction.currentTime=0;reaction.volume=1;
-  reaction.play().catch(()=>{});
+  const index=Math.floor(Math.random()*postReactionSounds.length);
+  if(audio&&postReactionBuffers&&postReactionBuffers[index]){
+   if(audio.state==='suspended')audio.resume().catch(()=>{});
+   const source=audio.createBufferSource();source.buffer=postReactionBuffers[index];
+   source.connect(audio.destination);source.start(0);
+  }else{
+   const reaction=postReactionSounds[index];
+   reaction.pause();reaction.currentTime=0;reaction.volume=1;
+   reaction.play().catch(()=>{});
+  }
  }catch{}
 }
 function burst(x,y,color,n=12){for(let i=0;i<n;i++){let a=Math.random()*Math.PI*2,s=1+Math.random()*5;particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:35+Math.random()*20,color,r:1+Math.random()*3})}}
