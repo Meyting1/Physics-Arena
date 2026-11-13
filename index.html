@@ -485,7 +485,7 @@ function physics(h){
    // Apply Magnus to every moving, massive body. Faster motion and stronger spin
    // increase curvature; lighter bodies accelerate more under the same lift force.
    const referenceMass=.82;
-   const magnusK=.006*2.028*(referenceMass/b.mass);
+   const magnusK=.006*2.6364*(referenceMass/b.mass);
    const curve=clamp(b.spin*magnusK,-.22,.22),vx=b.vx,vy=b.vy;
    b.vx+=-vy*curve*h;b.vy+=vx*curve*h;
   }
