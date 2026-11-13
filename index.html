@@ -108,6 +108,7 @@ const goalPosts=[
  {x:FIELD.right,y:FIELD.goalBottom,r:goalPostRadius,inv:0,vx:0,vy:0,spin:0,kind:'post'}
 ];
 let ballShotTrailUntil=0,ballShotTrailSamples=[];
+let ballWallCurveBoostActive=false;
 let screenState='teamSelect',chosenTeam=-1,opponentTeam=-1;
 const teamChoices=[
  {name:'ESTEGHLAL',file:'teams/esteghlal-new.png',image:new Image()},
@@ -219,7 +220,7 @@ function playPendingPostReaction(){
 }
 function burst(x,y,color,n=12){for(let i=0;i<n;i++){let a=Math.random()*Math.PI*2,s=1+Math.random()*5;particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:35+Math.random()*20,color,r:1+Math.random()*3})}}
 function showToast(){}
-function strike(b,dx,dy,aimPctOverride=null){const len=Math.hypot(dx,dy);if(len<2.5)return;if(firstKickoffShotPending){firstKickoffShotPending=false;firstKickoffShotInProgress=true;firstKickoffShotShooter=turn;}const aimPct=aimPctOverride===null?clamp((len-50)/100,0,1):clamp(aimPctOverride,0,1);const aimPower=b.kind==='ball'?Math.pow(aimPct,2.0):aimPct;const power=900*aimPower*(b.kind==='ball'?.65:1)*1.10*1.5;b.vx=dx/len*power;b.vy=dy/len*power;b.spin=0;b.visualRoll=0;if(b.kind==='ball'){ballShotTrailUntil=performance.now()+380;ballShotTrailSamples=[];}const restingBall=bodies.find(body=>body.kind==='ball');if(restingBall)restingBall.visualRoll=0;b.lowAimDrag=b.kind==='ball'?0:10*Math.pow(1-aimPct,2)*(aimPct<0.5?0.7:aimPct>0.5?1.3:1);b.frictionActive=false;b.ballCollisionCount=0;b.lastBallCollisionTick=-1;if(b.kind!=='ball'){const ball=bodies.find(body=>body.kind==='ball');if(ball){ball.frictionActive=false;ball.ballCollisionCount=0;ball._contactsLastTick=new Set();ball._contactsThisTick=new Set();}}turn=turn==='A'?'B':'A';shots++;updateTurn();playTone(180,.09,'triangle',.05);burst(b.x,b.y,b.color,7)}
+function strike(b,dx,dy,aimPctOverride=null){const len=Math.hypot(dx,dy);if(len<2.5)return;if(firstKickoffShotPending){firstKickoffShotPending=false;firstKickoffShotInProgress=true;firstKickoffShotShooter=turn;}const aimPct=aimPctOverride===null?clamp((len-50)/100,0,1):clamp(aimPctOverride,0,1);const aimPower=b.kind==='ball'?Math.pow(aimPct,2.0):aimPct;const power=900*aimPower*(b.kind==='ball'?.65:1)*1.10*1.5;b.vx=dx/len*power;b.vy=dy/len*power;b.spin=0;b.visualRoll=0;if(b.kind==='ball'){ballShotTrailUntil=performance.now()+380;ballShotTrailSamples=[];b._verticalWallCurveEligible=Math.atan2(Math.abs(dx),Math.abs(dy))*180/Math.PI<=10;ballWallCurveBoostActive=false;}const restingBall=bodies.find(body=>body.kind==='ball');if(restingBall)restingBall.visualRoll=0;b.lowAimDrag=b.kind==='ball'?0:10*Math.pow(1-aimPct,2)*(aimPct<0.5?0.7:aimPct>0.5?1.3:1);b.frictionActive=false;b.ballCollisionCount=0;b.lastBallCollisionTick=-1;if(b.kind!=='ball'){const ball=bodies.find(body=>body.kind==='ball');if(ball){ball.frictionActive=false;ball.ballCollisionCount=0;ball._contactsLastTick=new Set();ball._contactsThisTick=new Set();}}turn=turn==='A'?'B':'A';shots++;updateTurn();playTone(180,.09,'triangle',.05);burst(b.x,b.y,b.color,7)}
 const teamA=[0,3,5,7,9],teamB=[1,4,6,8,10];
 const formations=[
  [[.08,.50],[.38,.18],[.38,.82],[.76,.32],[.76,.68]],
@@ -482,7 +483,7 @@ function physics(h){
   // Magnus curve: lateral acceleration is proportional to spin and forward speed.
   // Contact friction creates spin; harder angled impacts can therefore produce stronger curve.
   if(b.kind==='ball'){
-   const magnusK=.006;
+   const magnusK=.006*(b._wallCurveBoostActive?1.3:1);
    const curve=clamp(b.spin*magnusK,-.22,.22),vx=b.vx,vy=b.vy;
    b.vx+=-vy*curve*h;b.vy+=vx*curve*h;
   }
@@ -567,7 +568,7 @@ function physics(h){
  if(firstKickoffShotInProgress&&!moving())firstKickoffShotInProgress=false;
  if(pendingPostReaction&&Math.hypot(ball.vx,ball.vy)<=BALL_REST_SPEED)playPendingPostReaction();
 }
-function markCollision(b,key='wall'){b.frictionActive=true;if(b.kind==='ball'){const current=b._contactsThisTick||new Set();current.add(key);}}
+function markCollision(b,key='wall'){b.frictionActive=true;if(b.kind==='ball'){const current=b._contactsThisTick||new Set();current.add(key);if(b._verticalWallCurveEligible&&(key.startsWith('wall-')||key.startsWith('net-')||key==='goal-post'))b._wallCurveBoostActive=true;}}
 function resolveStaticContact(body,nx,ny,restitution,key){
  const normalSpeed=body.vx*nx+body.vy*ny;
  if(normalSpeed>=0)return;
@@ -909,7 +910,7 @@ function draw(){
  }
  ballShotTrailSamples=ballShotTrailSamples.filter(sample=>trailNow-sample.time<380);
  for(const sample of ballShotTrailSamples){
-  const age=(trailNow-sample.time)/380,alpha=(1-age)*.72,radius=shotBall?shotBall.r*(.28+.42*(1-age)):8;
+  const age=(trailNow-sample.time)/380,alpha=Math.min(1,(1-age)*.72*1.4),radius=(shotBall?shotBall.r*(.28+.42*(1-age)):8)*1.4;
   const flame=ctx.createRadialGradient(sample.x,sample.y,1,sample.x,sample.y,radius*2.2);
   flame.addColorStop(0,`rgba(255,255,220,${alpha})`);
   flame.addColorStop(.28,`rgba(255,190,55,${alpha*.9})`);
