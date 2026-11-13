@@ -79,6 +79,10 @@ const W=1529,H=688,wall=24,goalW=170,goalDepth=78;
 const FIELD={left:330,right:1240,top:113,bottom:677,goalTop:272,goalBottom:490};
 let dpr=1,scale=1,offsetX=0,offsetY=0,scoreA=0,scoreB=0,turn='A',aim=null,selected=null,shots=0,particles=[],trails=[],soundOn=true,audio=null,toastTimer=0,settleTimer=0,goalEvents=0;
 let pendingPostReaction=false;
+// Preload all crowd reactions before gameplay so the chosen clip starts instantly at ball stop.
+const postReactionSounds=['./react.mp3','./react2.mp3','./react3.mp3'].map(src=>{
+ const sound=new Audio(src);sound.preload='auto';sound.load();return sound;
+});
 const bodies=[];
 // Four fixed circular goal posts. Their collision response uses the same circle-circle solver as player discs.
 const goalPostRadius=10.9;
@@ -183,10 +187,8 @@ function playPendingPostReaction(){
  pendingPostReaction=false;
  if(!soundOn)return;
  try{
-  const reactions=['./react.mp3','./react2.mp3','./react3.mp3'];
-  const reaction=new Audio(reactions[Math.floor(Math.random()*reactions.length)]);
-  reaction.preload='auto';
-  reaction.volume=1;
+  const reaction=postReactionSounds[Math.floor(Math.random()*postReactionSounds.length)];
+  reaction.pause();reaction.currentTime=0;reaction.volume=1;
   reaction.play().catch(()=>{});
  }catch{}
 }
