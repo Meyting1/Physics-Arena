@@ -493,7 +493,7 @@ function physics(h){
   if(b.kind==='ball'){
    // Match the reference: natural rolling rotation while moving, with no spin after stopping.
    const rollingRate=Math.hypot(b.vx,b.vy)/b.r;
-   if(rollingRate>.08)b.angle+=(rollingRate+b.spin)*h*1.18;
+   if(rollingRate>.08)b.angle+=(rollingRate+b.spin)*h*1.534;
    else{b.visualRoll=0;b.spin=0;}
   }else{
    b.angle+=(Math.hypot(b.vx,b.vy)/b.r+b.spin)*h;
