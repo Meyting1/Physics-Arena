@@ -81,6 +81,7 @@ let dpr=1,scale=1,offsetX=0,offsetY=0,scoreA=0,scoreB=0,turn='A',aim=null,select
 let pendingPostReaction=false;
 // Only the very first shot after each centre restart is subject to the no-goal rule.
 let firstKickoffShotPending=true,firstKickoffShotInProgress=false,firstKickoffShotShooter='A';
+let pendingKickoffReset=null;
 // Preload crowd reactions as audio elements and fetch their bytes for instant WebAudio playback.
 const postReactionUrls=['./react.mp3','./react2.mp3','./react3.mp3'];
 const postReactionSounds=postReactionUrls.map(src=>{
@@ -164,7 +165,7 @@ function pos(e){const r=canvas.getBoundingClientRect();const sx=(e.clientX-r.lef
 function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
 function updateTurn(){}
 const BALL_REST_SPEED=1.2; // End visually imperceptible ball drift sooner without changing rolling friction.
-function moving(){return bodies.some(b=>b._returnAnim||Math.hypot(b.vx,b.vy)>(b.kind==='ball'?BALL_REST_SPEED:.8))}
+function moving(){return !!pendingKickoffReset||bodies.some(b=>b._returnAnim||Math.hypot(b.vx,b.vy)>(b.kind==='ball'?BALL_REST_SPEED:.8))}
 function playTone(freq=260,dur=.06,type='sine',vol=.035){if(!soundOn)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();preparePostReactionBuffers();if(audio.state==='suspended')audio.resume().catch(()=>{});let o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=freq;g.gain.value=vol;o.connect(g);g.connect(audio.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);o.stop(audio.currentTime+dur)}catch{}}
 // Short, consistent UI click used only by team and formation controls.
 function playClickSound(){playTone(680,.035,'square',.018)}
@@ -421,6 +422,8 @@ window.addEventListener('pointercancel',e=>{if(e.pointerType!=='touch')finishAim
 let physicsTick=0;
 function physics(h){
   physicsTick++;
+  // Keep the goal scene still for 0.4 seconds before the kickoff reset begins.
+  if(pendingKickoffReset){pendingKickoffReset.remaining-=h;if(pendingKickoffReset.remaining<=0)completeInvalidKickoffReset();return;}
   // Pause gameplay while every returned disc completes its own animation.
   const returning=bodies.filter(b=>b._returnAnim);
   if(returning.length){
@@ -662,11 +665,14 @@ function collide(a,b){
  if(normalImpulse>95){playTone(clamp(105+normalImpulse*.20,120,420),.035,'sine',.01);if(normalImpulse>230)burst((a.x+b.x)/2,(a.y+b.y)/2,'#d8ffff',4)}
 }
 function restartAfterInvalidKickoffGoal(shooter){
- // A goal from the first shot of a restart is disallowed: restore the kickoff positions
- // and give the next centre possession to the opposing side, without changing the score.
+ // Hold the scene for 0.4 seconds before returning the ball and pieces to kickoff.
  firstKickoffShotInProgress=false;firstKickoffShotPending=false;pendingPostReaction=false;
+ pendingKickoffReset={shooter,startPositions:bodies.map(b=>({x:b.x,y:b.y})),remaining:.4};
+}
+function completeInvalidKickoffReset(){
+ if(!pendingKickoffReset)return;
+ const {shooter,startPositions}=pendingKickoffReset;pendingKickoffReset=null;
  const nextKickoffTurn=shooter==='A'?'B':'A';
- const startPositions=bodies.map(b=>({x:b.x,y:b.y}));
  setup(nextKickoffTurn);
  bodies.forEach((body,index)=>{
   const start=startPositions[index];if(!start)return;
