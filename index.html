@@ -519,15 +519,15 @@ function physics(h){
   for(const body of bodies)for(const post of goalPosts)collidePostWall(body,post);
  }
  for(const b of bodies)if(b.kind==='ball')b._contactsLastTick=b._contactsThisTick;
- const ballSpeed=Math.hypot(bodies[2].vx,bodies[2].vy);
- if(ballSpeed>3600){bodies[2].vx*=3600/ballSpeed;bodies[2].vy*=3600/ballSpeed}
  const ball=bodies[2];
+ const ballSpeed=Math.hypot(ball.vx,ball.vy);
+ if(ballSpeed>3600){ball.vx*=3600/ballSpeed;ball.vy*=3600/ballSpeed}
  // A goal counts only after 90% of the ball's diameter has crossed the goal line.
  if(ball.x>FIELD.right+ball.r*.8){scoreA++;goal('A')}
  else if(ball.x<FIELD.left-ball.r*.8){scoreB++;goal('B')}
- // Decide only after the ball has fully stopped: if goal() ran, it already
- // cancelled the pending reaction and only the goal sound will be heard.
- if(ballSpeed===0)playPendingPostReaction();
+ // Fire the pending crowd reaction on the exact physics tick the non-scoring
+ // ball reaches its normal rest threshold. A goal cancels it inside goal().
+ if(pendingPostReaction&&Math.hypot(ball.vx,ball.vy)<=.08)playPendingPostReaction();
 }
 function markCollision(b,key='wall'){b.frictionActive=true;if(b.kind==='ball'){const current=b._contactsThisTick||new Set();current.add(key);}}
 function resolveStaticContact(body,nx,ny,restitution,key){
