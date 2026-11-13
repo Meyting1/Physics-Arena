@@ -78,6 +78,7 @@ const W=1529,H=688,wall=24,goalW=170,goalDepth=78;
 // Keep the complete supplied arena image, including the player-name and score panels.
 const FIELD={left:330,right:1240,top:113,bottom:677,goalTop:272,goalBottom:490};
 let dpr=1,scale=1,offsetX=0,offsetY=0,scoreA=0,scoreB=0,turn='A',aim=null,selected=null,shots=0,particles=[],trails=[],soundOn=true,audio=null,toastTimer=0,settleTimer=0,goalEvents=0;
+let pendingPostReaction=false;
 const bodies=[];
 // Four fixed circular goal posts. Their collision response uses the same circle-circle solver as player discs.
 const goalPostRadius=10.9;
@@ -161,8 +162,9 @@ function ballTrajectoryEntersGoal(ball){
  const projectedY=ball.y+ball.vy*timeToLine;
  return projectedY>=minY&&projectedY<=maxY;
 }
-function playPostClang(impactSpeed,headingForGoal=false){
+function playPostClang(impactSpeed){
  if(!soundOn)return;
+ pendingPostReaction=true;
  try{
   audio=audio||new(window.AudioContext||window.webkitAudioContext)();
   if(audio.state==='suspended')audio.resume().catch(()=>{});
@@ -174,17 +176,18 @@ function playPostClang(impactSpeed,headingForGoal=false){
   gain.gain.value=2.6*clamp(impactSpeed/650,.8,1.25);
   source.connect(gain);gain.connect(audio.destination);
   hit.play().catch(()=>{});
-  // Play one of the three crowd reactions only after the post-impact sound ends.
-  hit.addEventListener('ended',()=>{
-   if(!soundOn)return;
-   try{
-    const reactions=['./react.mp3','./react2.mp3','./react3.mp3'];
-    const reaction=new Audio(reactions[Math.floor(Math.random()*reactions.length)]);
-    reaction.preload='auto';
-    reaction.volume=1;
-    reaction.play().catch(()=>{});
-   }catch{}
-  },{once:true});
+ }catch{}
+}
+function playPendingPostReaction(){
+ if(!pendingPostReaction)return;
+ pendingPostReaction=false;
+ if(!soundOn)return;
+ try{
+  const reactions=['./react.mp3','./react2.mp3','./react3.mp3'];
+  const reaction=new Audio(reactions[Math.floor(Math.random()*reactions.length)]);
+  reaction.preload='auto';
+  reaction.volume=1;
+  reaction.play().catch(()=>{});
  }catch{}
 }
 function burst(x,y,color,n=12){for(let i=0;i<n;i++){let a=Math.random()*Math.PI*2,s=1+Math.random()*5;particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:35+Math.random()*20,color,r:1+Math.random()*3})}}
@@ -522,6 +525,9 @@ function physics(h){
  // A goal counts only after 90% of the ball's diameter has crossed the goal line.
  if(ball.x>FIELD.right+ball.r*.8){scoreA++;goal('A')}
  else if(ball.x<FIELD.left-ball.r*.8){scoreB++;goal('B')}
+ // Decide only after the ball has fully stopped: if goal() ran, it already
+ // cancelled the pending reaction and only the goal sound will be heard.
+ if(ballSpeed===0)playPendingPostReaction();
 }
 function markCollision(b,key='wall'){b.frictionActive=true;if(b.kind==='ball'){const current=b._contactsThisTick||new Set();current.add(key);}}
 function resolveStaticContact(body,nx,ny,restitution,key){
@@ -566,7 +572,7 @@ function collidePostWall(body,post){
   const impactSpeed=-(body.vx*nx+body.vy*ny);
   if(impactSpeed>0){
    resolveStaticContact(body,nx,ny,body.kind==='ball'?.92:.84,'goal-post');
-   if(body.kind==='ball')playPostClang(impactSpeed,ballTrajectoryEntersGoal(body));
+   if(body.kind==='ball')playPostClang(impactSpeed);
    wallFX(body.x,body.y);
   }
 
@@ -627,6 +633,8 @@ function collide(a,b){
  if(normalImpulse>95){playTone(clamp(105+normalImpulse*.20,120,420),.035,'sine',.01);if(normalImpulse>230)burst((a.x+b.x)/2,(a.y+b.y)/2,'#d8ffff',4)}
 }
 function goal(who){
+ // A goal takes priority: discard any pending post-hit crowd reaction.
+ pendingPostReaction=false;
  goalEvents++;
  if(pendingFormation!==null){selectedFormation=pendingFormation;pendingFormation=null;}
  // Preserve every disc's post-goal position, reset the match state, then animate
