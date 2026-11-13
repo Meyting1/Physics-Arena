@@ -79,6 +79,8 @@ const W=1529,H=688,wall=24,goalW=170,goalDepth=78;
 const FIELD={left:330,right:1240,top:113,bottom:677,goalTop:272,goalBottom:490};
 let dpr=1,scale=1,offsetX=0,offsetY=0,scoreA=0,scoreB=0,turn='A',aim=null,selected=null,shots=0,particles=[],trails=[],soundOn=true,audio=null,toastTimer=0,settleTimer=0,goalEvents=0;
 let pendingPostReaction=false;
+// Only the very first shot after each centre restart is subject to the no-goal rule.
+let firstKickoffShotPending=true,firstKickoffShotInProgress=false,firstKickoffShotShooter='A';
 // Preload crowd reactions as audio elements and fetch their bytes for instant WebAudio playback.
 const postReactionUrls=['./react.mp3','./react2.mp3','./react3.mp3'];
 const postReactionSounds=postReactionUrls.map(src=>{
@@ -150,7 +152,7 @@ function setup(startingTurn='A'){
  bodies.push(make(W*.76,H/2,47.15172,5,'#ff4f9a','strikerB'));
  bodies.push(make((FIELD.left+FIELD.right)/2,(FIELD.top+FIELD.bottom)/2,13.2,.82,'#f5fbff','ball'));
  for(let i=0;i<4;i++){const y=H/2+(i-1.5)*76;bodies.push(make(W*.38,y,47.15172,5,'#1fb9c9','discA'));bodies.push(make(W*.62,y,47.15172,5,'#c73578','discB'));}
- particles=[];trails=[];aim=null;selected=null;turn=startingTurn;settleTimer=0;applyFormation(selectedFormation,teamA,false);applyFormation(aiFormation,teamB,true);updateTurn();
+ particles=[];trails=[];aim=null;selected=null;turn=startingTurn;settleTimer=0;firstKickoffShotPending=true;firstKickoffShotInProgress=false;firstKickoffShotShooter=startingTurn;applyFormation(selectedFormation,teamA,false);applyFormation(aiFormation,teamB,true);updateTurn();
 }
 function resize(){
  const rect=canvas.getBoundingClientRect();dpr=Math.min(devicePixelRatio||1,2);
@@ -215,7 +217,7 @@ function playPendingPostReaction(){
 }
 function burst(x,y,color,n=12){for(let i=0;i<n;i++){let a=Math.random()*Math.PI*2,s=1+Math.random()*5;particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:35+Math.random()*20,color,r:1+Math.random()*3})}}
 function showToast(){}
-function strike(b,dx,dy,aimPctOverride=null){const len=Math.hypot(dx,dy);if(len<2.5)return;const aimPct=aimPctOverride===null?clamp((len-50)/100,0,1):clamp(aimPctOverride,0,1);const aimPower=b.kind==='ball'?Math.pow(aimPct,1.8):aimPct;const power=1100*aimPower*(b.kind==='ball'?.65:1)*1.10*1.5;b.vx=dx/len*power;b.vy=dy/len*power;b.spin=0;b.visualRoll=0;const restingBall=bodies.find(body=>body.kind==='ball');if(restingBall)restingBall.visualRoll=0;b.lowAimDrag=b.kind==='ball'?0:10*Math.pow(1-aimPct,2)*(aimPct<0.5?0.7:aimPct>0.5?1.3:1);b.frictionActive=false;b.ballCollisionCount=0;b.lastBallCollisionTick=-1;if(b.kind!=='ball'){const ball=bodies.find(body=>body.kind==='ball');if(ball){ball.frictionActive=false;ball.ballCollisionCount=0;ball._contactsLastTick=new Set();ball._contactsThisTick=new Set();}}turn=turn==='A'?'B':'A';shots++;updateTurn();playTone(180,.09,'triangle',.05);burst(b.x,b.y,b.color,7)}
+function strike(b,dx,dy,aimPctOverride=null){const len=Math.hypot(dx,dy);if(len<2.5)return;if(firstKickoffShotPending){firstKickoffShotPending=false;firstKickoffShotInProgress=true;firstKickoffShotShooter=turn;}const aimPct=aimPctOverride===null?clamp((len-50)/100,0,1):clamp(aimPctOverride,0,1);const aimPower=b.kind==='ball'?Math.pow(aimPct,1.8):aimPct;const power=1100*aimPower*(b.kind==='ball'?.65:1)*1.10*1.5;b.vx=dx/len*power;b.vy=dy/len*power;b.spin=0;b.visualRoll=0;const restingBall=bodies.find(body=>body.kind==='ball');if(restingBall)restingBall.visualRoll=0;b.lowAimDrag=b.kind==='ball'?0:10*Math.pow(1-aimPct,2)*(aimPct<0.5?0.7:aimPct>0.5?1.3:1);b.frictionActive=false;b.ballCollisionCount=0;b.lastBallCollisionTick=-1;if(b.kind!=='ball'){const ball=bodies.find(body=>body.kind==='ball');if(ball){ball.frictionActive=false;ball.ballCollisionCount=0;ball._contactsLastTick=new Set();ball._contactsThisTick=new Set();}}turn=turn==='A'?'B':'A';shots++;updateTurn();playTone(180,.09,'triangle',.05);burst(b.x,b.y,b.color,7)}
 const teamA=[0,3,5,7,9],teamB=[1,4,6,8,10];
 const formations=[
  [[.08,.50],[.38,.18],[.38,.82],[.76,.32],[.76,.68]],
@@ -549,10 +551,11 @@ function physics(h){
  const ballSpeed=Math.hypot(ball.vx,ball.vy);
  if(ballSpeed>3600){ball.vx*=3600/ballSpeed;ball.vy*=3600/ballSpeed}
  // A goal counts only after 90% of the ball's diameter has crossed the goal line.
- if(ball.x>FIELD.right+ball.r*.8){scoreA++;goal('A')}
- else if(ball.x<FIELD.left-ball.r*.8){scoreB++;goal('B')}
+ if(ball.x>FIELD.right+ball.r*.8){if(firstKickoffShotInProgress)restartAfterInvalidKickoffGoal(firstKickoffShotShooter);else{scoreA++;goal('A')}}
+ else if(ball.x<FIELD.left-ball.r*.8){if(firstKickoffShotInProgress)restartAfterInvalidKickoffGoal(firstKickoffShotShooter);else{scoreB++;goal('B')}}
  // Fire the pending crowd reaction on the exact physics tick the non-scoring
  // ball reaches its normal rest threshold. A goal cancels it inside goal().
+ if(firstKickoffShotInProgress&&!moving())firstKickoffShotInProgress=false;
  if(pendingPostReaction&&Math.hypot(ball.vx,ball.vy)<=BALL_REST_SPEED)playPendingPostReaction();
 }
 function markCollision(b,key='wall'){b.frictionActive=true;if(b.kind==='ball'){const current=b._contactsThisTick||new Set();current.add(key);}}
@@ -657,6 +660,20 @@ function collide(a,b){
  b.spin-=tangentImpulse*rb*invIB;
  a.spin=clamp(a.spin,-32,32);b.spin=clamp(b.spin,-32,32);
  if(normalImpulse>95){playTone(clamp(105+normalImpulse*.20,120,420),.035,'sine',.01);if(normalImpulse>230)burst((a.x+b.x)/2,(a.y+b.y)/2,'#d8ffff',4)}
+}
+function restartAfterInvalidKickoffGoal(shooter){
+ // A goal from the first shot of a restart is disallowed: restore the kickoff positions
+ // and give the next centre possession to the opposing side, without changing the score.
+ firstKickoffShotInProgress=false;firstKickoffShotPending=false;pendingPostReaction=false;
+ const nextKickoffTurn=shooter==='A'?'B':'A';
+ const startPositions=bodies.map(b=>({x:b.x,y:b.y}));
+ setup(nextKickoffTurn);
+ bodies.forEach((body,index)=>{
+  const start=startPositions[index];if(!start)return;
+  const targetX=body.x,targetY=body.y;
+  body.x=start.x;body.y=start.y;body.vx=0;body.vy=0;body.spin=0;body.angle=0;body.frictionActive=false;
+  body._returnAnim={fromX:start.x,fromY:start.y,toX:targetX,toY:targetY,elapsed:0,duration:1.5};
+ });
 }
 function goal(who){
  // A goal takes priority: discard any pending post-hit crowd reaction.
