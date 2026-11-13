@@ -100,6 +100,8 @@ const pieceSide=new Image(),pieceTop=new Image();
 pieceSide.src='piece-logo-new.png';
 pieceTop.src='piece-top-new.png';
 const ballTexture=new Image();ballTexture.src='ball_exact.jpg';
+// Dedicated goal celebration sound stored in the repository.
+const goalSound=new Audio('./goal.mp3');goalSound.preload='auto';
 // Keep the original high-resolution arena artwork for maximum visual fidelity.
 const fieldTexture=new Image();fieldTexture.src='1794090316714.jpg';
 // Decorative goal-net overlays; crop transparent padding so the complete goal artwork is visible.
@@ -631,7 +633,7 @@ function goal(who){
  // all ten discs back to the freshly selected starting formation.
  const startPositions=bodies.map(b=>({x:b.x,y:b.y,kind:b.kind}));
  burst(W/2,who==='A'?18:H-18,who==='A'?'#53f5e8':'#ff4f9a',42);
- playTone(520,.28,'sawtooth',.04);
+ if(soundOn){goalSound.currentTime=0;goalSound.play().catch(()=>{});}
  setup();
  bodies.forEach((body,index)=>{
   if(body.kind==='ball')return;
