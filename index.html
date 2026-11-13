@@ -624,7 +624,25 @@ function collide(a,b){
  a.spin=clamp(a.spin,-32,32);b.spin=clamp(b.spin,-32,32);
  if(normalImpulse>95){playTone(clamp(105+normalImpulse*.20,120,420),.035,'sine',.01);if(normalImpulse>230)burst((a.x+b.x)/2,(a.y+b.y)/2,'#d8ffff',4)}
 }
-function goal(who){goalEvents++;if(pendingFormation!==null){selectedFormation=pendingFormation;pendingFormation=null;}burst(W/2,who==='A'?18:H-18,who==='A'?'#53f5e8':'#ff4f9a',42);playTone(520,.28,'sawtooth',.04);setup();}
+function goal(who){
+ goalEvents++;
+ if(pendingFormation!==null){selectedFormation=pendingFormation;pendingFormation=null;}
+ // Preserve every disc's post-goal position, reset the match state, then animate
+ // all ten discs back to the freshly selected starting formation.
+ const startPositions=bodies.map(b=>({x:b.x,y:b.y,kind:b.kind}));
+ burst(W/2,who==='A'?18:H-18,who==='A'?'#53f5e8':'#ff4f9a',42);
+ playTone(520,.28,'sawtooth',.04);
+ setup();
+ bodies.forEach((body,index)=>{
+  if(body.kind==='ball')return;
+  const start=startPositions[index];
+  if(!start)return;
+  const targetX=body.x,targetY=body.y;
+  body.x=start.x;body.y=start.y;
+  body.vx=0;body.vy=0;body.spin=0;body.angle=0;body.frictionActive=false;
+  body._returnAnim={fromX:start.x,fromY:start.y,toX:targetX,toY:targetY,elapsed:0,duration:1.5};
+ });
+}
 function ai(){
  if(turn!=='B'||moving()||aim)return;
  const ball=bodies[2];
