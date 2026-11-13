@@ -150,7 +150,7 @@ function setup(startingTurn='A'){
  bodies.push(make(W*.76,H/2,47.15172,5,'#ff4f9a','strikerB'));
  bodies.push(make((FIELD.left+FIELD.right)/2,(FIELD.top+FIELD.bottom)/2,13.2,.82,'#f5fbff','ball'));
  for(let i=0;i<4;i++){const y=H/2+(i-1.5)*76;bodies.push(make(W*.38,y,47.15172,5,'#1fb9c9','discA'));bodies.push(make(W*.62,y,47.15172,5,'#c73578','discB'));}
- particles=[];trails=[];aim=null;selected=null;turn=startingTurn;settleTimer=0;applyFormation(selectedFormation);updateTurn();
+ particles=[];trails=[];aim=null;selected=null;turn=startingTurn;settleTimer=0;applyFormation(selectedFormation,teamA,false);applyFormation(aiFormation,teamB,true);updateTurn();
 }
 function resize(){
  const rect=canvas.getBoundingClientRect();dpr=Math.min(devicePixelRatio||1,2);
@@ -229,18 +229,21 @@ const formations=[
  [[.10,.50],[.40,.25],[.40,.75],[.70,.25],[.70,.75]],
  [[.10,.50],[.26,.18],[.26,.82],[.58,.38],[.78,.62]]
 ];
-let selectedFormation=0,pendingFormation=null,formationPanelOpen=false;
-function applyFormation(index){
+let selectedFormation=0,aiFormation=0,pendingFormation=null,formationPanelOpen=false;
+function applyFormation(index,team=teamA,mirrored=false){
  const layout=formations[index];if(!layout)return;
  const mid=(FIELD.left+FIELD.right)/2;
- teamA.forEach((bodyIndex,i)=>{
+ team.forEach((bodyIndex,i)=>{
   const b=bodies[bodyIndex],p=layout[i];if(!b||!p)return;
-  b.x=FIELD.left+55+p[0]*(mid-FIELD.left-110);
+  const x=FIELD.left+55+p[0]*(mid-FIELD.left-110);
+  b.x=mirrored?2*mid-x:x;
   b.y=FIELD.top+55+p[1]*(FIELD.bottom-FIELD.top-110);
   b.vx=0;b.vy=0;b.spin=0;b.angle=0;b.frictionActive=false;
  });
- selectedFormation=index;selected=null;gestureVector=null;aim=null;
- document.querySelectorAll('.formationOption').forEach((el,i)=>el.classList.toggle('active',i===index));
+ if(team===teamA){
+  selectedFormation=index;selected=null;gestureVector=null;aim=null;
+  document.querySelectorAll('.formationOption').forEach((el,i)=>el.classList.toggle('active',i===index));
+ }
 }
 // Clean aiming controller: one finger keeps the original pull-back gesture;
 // with two fingers, movement from BOTH fingers contributes to the same aim vector.
@@ -662,6 +665,12 @@ function goal(who){
  const nextKickoffTurn=who==='A'?'B':'A';
  goalEvents++;
  if(pendingFormation!==null){selectedFormation=pendingFormation;pendingFormation=null;}
+ // The AI starts with the player's selected formation and may occasionally
+ // switch to another available formation during the post-goal reset.
+ if(Math.random()<0.25){
+  const choices=formations.map((_,i)=>i).filter(i=>i!==aiFormation);
+  aiFormation=choices[Math.floor(Math.random()*choices.length)];
+ }
  // Preserve every disc's post-goal position, reset the match state, then animate
  // all ten discs back to the freshly selected starting formation.
  const startPositions=bodies.map(b=>({x:b.x,y:b.y,kind:b.kind}));
