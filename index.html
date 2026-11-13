@@ -149,7 +149,8 @@ function resize(){
 function pos(e){const r=canvas.getBoundingClientRect();const sx=(e.clientX-r.left)*dpr,sy=(e.clientY-r.top)*dpr;return{x:(sy-offsetY)/scale,y:H-(sx-offsetX)/scale}}
 function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
 function updateTurn(){}
-function moving(){return bodies.some(b=>b._returnAnim||Math.hypot(b.vx,b.vy)>(b.kind==='ball'?.08:.8))}
+const BALL_REST_SPEED=.8; // Stop imperceptibly slow ball drift without changing rolling friction.
+function moving(){return bodies.some(b=>b._returnAnim||Math.hypot(b.vx,b.vy)>(b.kind==='ball'?BALL_REST_SPEED:.8))}
 function playTone(freq=260,dur=.06,type='sine',vol=.035){if(!soundOn)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume().catch(()=>{});let o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=freq;g.gain.value=vol;o.connect(g);g.connect(audio.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);o.stop(audio.currentTime+dur)}catch{}}
 // Short, consistent UI click used only by team and formation controls.
 function playClickSound(){playTone(680,.035,'square',.018)}
@@ -442,7 +443,7 @@ function physics(h){
    b.angle+=(Math.hypot(b.vx,b.vy)/b.r+b.spin)*h;
   }
   b.spin*=Math.exp(-(b.kind==='ball'?1.7:2.8)*h);
-  if(Math.hypot(b.vx,b.vy)<(b.kind==='ball'?.08:1.2)){b.vx=0;b.vy=0;b.spin=0}
+  if(Math.hypot(b.vx,b.vy)<(b.kind==='ball'?BALL_REST_SPEED:1.2)){b.vx=0;b.vy=0;b.spin=0}
   // Player-piece contacts use the exact green dotted ring: radius r*0.73416-8, centered 6px below the artwork center.
   const hitRadius=b.kind==='ball'?b.r:Math.max(0,b.r*.73416-8);
   const contactOffset=b.kind==='ball'?0:6;
@@ -529,7 +530,7 @@ function physics(h){
  else if(ball.x<FIELD.left-ball.r*.8){scoreB++;goal('B')}
  // Fire the pending crowd reaction on the exact physics tick the non-scoring
  // ball reaches its normal rest threshold. A goal cancels it inside goal().
- if(pendingPostReaction&&Math.hypot(ball.vx,ball.vy)<=.08)playPendingPostReaction();
+ if(pendingPostReaction&&Math.hypot(ball.vx,ball.vy)<=BALL_REST_SPEED)playPendingPostReaction();
 }
 function markCollision(b,key='wall'){b.frictionActive=true;if(b.kind==='ball'){const current=b._contactsThisTick||new Set();current.add(key);}}
 function resolveStaticContact(body,nx,ny,restitution,key){
