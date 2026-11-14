@@ -422,8 +422,8 @@ function resolveArenaWalls(b){
  const contactY=b.y+contactOffset;
  const goalOpeningTop=GOAL_UPPER_WALL_Y;
  const inGoalMouth=contactY+hitRadius>goalOpeningTop&&contactY-hitRadius<FIELD.goalBottom;
- const beyondLeftGoal=b.x<FIELD.left&&inGoalMouth;
- const beyondRightGoal=b.x>FIELD.right&&inGoalMouth;
+ const beyondLeftGoal=b.x<FIELD.left;
+ const beyondRightGoal=b.x>FIELD.right;
  const enteringLeftGoal=inGoalMouth&&b.x-hitRadius<FIELD.left;
  const enteringRightGoal=inGoalMouth&&b.x+hitRadius>FIELD.right;
  if(b.x-hitRadius<FIELD.left&&!enteringLeftGoal){b.x=FIELD.left+hitRadius;resolveStaticContact(b,1,0,b.kind==='ball'?.92:.84,'wall-left');wallFX(b.x,b.y)}
