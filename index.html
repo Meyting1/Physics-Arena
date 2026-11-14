@@ -152,7 +152,7 @@ function setup(startingTurn='A'){
  bodies.length=0;
  bodies.push(make(W*.24,H/2,47.15172,5,'#53f5e8','strikerA'));
  bodies.push(make(W*.76,H/2,47.15172,5,'#ff4f9a','strikerB'));
- bodies.push(make((FIELD.left+FIELD.right)/2,FIELD.top+13.2,13.2,.82,'#f5fbff','ball')); // Start exactly tangent to the top wall for repeatable curve testing.
+ bodies.push(make(FIELD.left+goalPostRadius+13.2+.5,FIELD.goalTop,13.2,.82,'#f5fbff','ball')); // Start beside the upper-left goalpost for repeatable corner-contact testing; the shared collision physics applies at all four corners.
  for(let i=0;i<4;i++){const y=H/2+(i-1.5)*76;bodies.push(make(W*.38,y,47.15172,5,'#1fb9c9','discA'));bodies.push(make(W*.62,y,47.15172,5,'#c73578','discB'));}
  particles=[];trails=[];aim=null;selected=null;turn=startingTurn;settleTimer=0;firstKickoffShotPending=true;firstKickoffShotInProgress=false;firstKickoffShotShooter=startingTurn;applyFormation(selectedFormation,teamA,false);applyFormation(aiFormation,teamB,true);updateTurn();
 }
