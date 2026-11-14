@@ -420,7 +420,7 @@ function resolveArenaWalls(b){
  const contactOffset=b.kind==='ball'?0:6;
  const contactY=b.y+contactOffset;
  const goalOpeningTop=FIELD.goalTop;
- const inGoalMouth=contactY>goalOpeningTop&&contactY<FIELD.goalBottom;
+ const inGoalMouth=contactY+hitRadius>goalOpeningTop&&contactY-hitRadius<FIELD.goalBottom;
  const beyondLeftGoal=b.x<FIELD.left&&inGoalMouth;
  const beyondRightGoal=b.x>FIELD.right&&inGoalMouth;
  const enteringLeftGoal=inGoalMouth&&b.x-hitRadius<FIELD.left;
