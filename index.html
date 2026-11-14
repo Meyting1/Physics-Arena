@@ -419,23 +419,46 @@ function resolveArenaWalls(b){
  if(b._returnAnim)return;
  const hitRadius=b.kind==='ball'?b.r:Math.max(0,b.r*.73416-8);
  const contactOffset=b.kind==='ball'?0:6;
- const contactY=b.y+contactOffset;
- const goalOpeningTop=GOAL_UPPER_WALL_Y;
- const inGoalMouth=contactY+hitRadius>goalOpeningTop&&contactY-hitRadius<FIELD.goalBottom;
- const beyondLeftGoal=b.x<FIELD.left;
- const beyondRightGoal=b.x>FIELD.right;
- const enteringLeftGoal=inGoalMouth&&b.x-hitRadius<FIELD.left;
- const enteringRightGoal=inGoalMouth&&b.x+hitRadius>FIELD.right;
- if(b.x-hitRadius<FIELD.left&&!enteringLeftGoal){b.x=FIELD.left+hitRadius;resolveStaticContact(b,1,0,b.kind==='ball'?.92:.84,'wall-left');wallFX(b.x,b.y)}
- if(b.x+hitRadius>FIELD.right&&!enteringRightGoal){b.x=FIELD.right-hitRadius;resolveStaticContact(b,-1,0,b.kind==='ball'?.92:.84,'wall-right');wallFX(b.x,b.y)}
- if(beyondLeftGoal&&b.x-hitRadius<FIELD.left-goalDepth){b.x=FIELD.left-goalDepth+hitRadius;resolveStaticContact(b,1,0,b.kind==='ball'?.92:.84,'net-back-left');wallFX(b.x,b.y)}
- if(beyondRightGoal&&b.x+hitRadius>FIELD.right+goalDepth){b.x=FIELD.right+goalDepth-hitRadius;resolveStaticContact(b,-1,0,b.kind==='ball'?.92:.84,'net-back-right');wallFX(b.x,b.y)}
- if(beyondLeftGoal||beyondRightGoal){
-  if(contactY-hitRadius<goalOpeningTop){b.y=goalOpeningTop+hitRadius-contactOffset;resolveStaticContact(b,0,1,b.kind==='ball'?.92:.84,'net-side-top');wallFX(b.x,b.y)}
-  if(contactY+hitRadius>FIELD.goalBottom){b.y=FIELD.goalBottom-hitRadius-contactOffset;resolveStaticContact(b,0,-1,b.kind==='ball'?.92:.84,'net-side-bottom');wallFX(b.x,b.y)}
+ const cx=b.x,cy=b.y+contactOffset;
+ const restitution=b.kind==='ball'?.92:.84;
+ // These segments are the same exact wall centre-lines drawn in orange by drawImpactRanges().
+ // A moving body's effective radius is applied around each segment, including its endpoints.
+ const walls=[
+  [FIELD.left,FIELD.top,FIELD.right,FIELD.top,'wall-top'],
+  [FIELD.left,FIELD.bottom,FIELD.right,FIELD.bottom,'wall-bottom'],
+  [FIELD.left,FIELD.top,FIELD.left,GOAL_UPPER_WALL_Y,'wall-left-upper'],
+  [FIELD.left,FIELD.goalBottom,FIELD.left,FIELD.bottom,'wall-left-lower'],
+  [FIELD.right,FIELD.top,FIELD.right,GOAL_UPPER_WALL_Y,'wall-right-upper'],
+  [FIELD.right,FIELD.goalBottom,FIELD.right,FIELD.bottom,'wall-right-lower'],
+  [FIELD.left-goalDepth,GOAL_UPPER_WALL_Y,FIELD.left,GOAL_UPPER_WALL_Y,'goal-left-upper'],
+  [FIELD.left-goalDepth,FIELD.goalBottom,FIELD.left,FIELD.goalBottom,'goal-left-lower'],
+  [FIELD.left-goalDepth,GOAL_UPPER_WALL_Y,FIELD.left-goalDepth,FIELD.goalBottom,'goal-left-back'],
+  [FIELD.right,GOAL_UPPER_WALL_Y,FIELD.right+goalDepth,GOAL_UPPER_WALL_Y,'goal-right-upper'],
+  [FIELD.right,FIELD.goalBottom,FIELD.right+goalDepth,FIELD.goalBottom,'goal-right-lower'],
+  [FIELD.right+goalDepth,GOAL_UPPER_WALL_Y,FIELD.right+goalDepth,FIELD.goalBottom,'goal-right-back']
+ ];
+ for(const wall of walls){
+  const [x1,y1,x2,y2,key]=wall;
+  const sx=x2-x1,sy=y2-y1,len2=sx*sx+sy*sy;
+  const t=Math.max(0,Math.min(1,((b.x-x1)*sx+(cy-y1)*sy)/len2));
+  const px=x1+t*sx,py=y1+t*sy;
+  const dx=b.x-px,dy=cy-py,dist=Math.hypot(dx,dy);
+  if(dist>=hitRadius)continue;
+  let nx,ny;
+  if(dist>1e-8){nx=dx/dist;ny=dy/dist;}
+  else{
+   const len=Math.sqrt(len2);
+   nx=-sy/len;ny=sx/len;
+   if(b.vx*nx+b.vy*ny>0){nx=-nx;ny=-ny;}
+  }
+  const penetration=hitRadius-dist;
+  b.x+=nx*penetration;
+  b.y+=ny*penetration;
+  if(b.vx*nx+b.vy*ny<0){
+   resolveStaticContact(b,nx,ny,restitution,key);
+   wallFX(b.x,b.y);
+  }
  }
- if(contactY-hitRadius<FIELD.top){b.y=FIELD.top+hitRadius-contactOffset;resolveStaticContact(b,0,1,b.kind==='ball'?.92:.84,'wall-top');wallFX(b.x,b.y)}
- if(contactY+hitRadius>FIELD.bottom){b.y=FIELD.bottom-hitRadius-contactOffset;resolveStaticContact(b,0,-1,b.kind==='ball'?.92:.84,'wall-bottom');wallFX(b.x,b.y)}
 }
 function physics(h){
   physicsTick++;
