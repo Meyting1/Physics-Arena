@@ -486,7 +486,18 @@ function physics(h){
    // increase curvature; lighter bodies accelerate more under the same lift force.
    const referenceMass=.82;
    const magnusK=.006*10.67742*(referenceMass/b.mass);
-   const curve=clamp(b.spin*magnusK,-.70,.70),vx=b.vx,vy=b.vy;
+   let wallCurveBoost=1;
+   if(b.kind==='ball'){
+    // Smoothly double the ball's Magnus response close to the arena walls.
+    // Full boost within one ball radius; fades to normal by three radii.
+    const wallGap=Math.min(
+     b.x-FIELD.left,FIELD.right-b.x,
+     b.y-FIELD.top,FIELD.bottom-b.y
+    )-b.r;
+    const wallProximity=clamp((b.r*2-wallGap)/(b.r*2),0,1);
+    wallCurveBoost=1+wallProximity;
+   }
+   const curve=clamp(b.spin*magnusK*wallCurveBoost,-1.40,1.40),vx=b.vx,vy=b.vy;
    b.vx+=-vy*curve*h;b.vy+=vx*curve*h;
   }
   b.x+=b.vx*h;b.y+=b.vy*h;
