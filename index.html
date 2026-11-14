@@ -555,9 +555,11 @@ function physics(h){
  // Several solver passes resolve contact chains and remove residual overlap.
  for(let pass=0;pass<4;pass++){
   for(let i=0;i<bodies.length;i++)for(let j=i+1;j<bodies.length;j++)collide(bodies[i],bodies[j]);
-  // Goalposts are visual markers only: circular collisions are disabled.
-  // Their opening edges are handled as straight wall faces by resolveArenaWalls.
-  for(const body of bodies)resolveArenaWalls(body);
+  // All arena and goalpost contacts use flat, axis-aligned wall faces.
+  for(const body of bodies){
+   resolveArenaWalls(body);
+   for(const post of goalPosts)resolvePostWall(body,post);
+  }
  }
  for(const b of bodies)if(b.kind==='ball')b._contactsLastTick=b._contactsThisTick;
  const ball=bodies[2];
@@ -594,6 +596,32 @@ function resolveStaticContact(body,nx,ny,restitution,key){
  body.spin=clamp(body.spin-tangentImpulse*radius*invI,-32,32);
 }
 function wallFX(x,y){if(Math.random()<.09)burst(x,y,'#53f5e8',3)}
+function resolvePostWall(body,post){
+ if(body._returnAnim)return;
+ // Treat each post as a small rectangular wall block, never as a circle.
+ // The moving body's real collision footprint expands the flat faces.
+ const radius=body.kind==='ball'?body.r:Math.max(0,body.r*.73416-8);
+ const centerY=body.y+(body.kind==='ball'?0:6);
+ const half=goalPostRadius;
+ const left=post.x-half-radius,right=post.x+half+radius;
+ const top=post.y+(post.y===FIELD.goalTop?19:0)-half-radius;
+ const bottom=post.y+(post.y===FIELD.goalTop?19:0)+half+radius;
+ if(body.x<=left||body.x>=right||centerY<=top||centerY>=bottom)return;
+ const pushLeft=body.x-left,pushRight=right-body.x;
+ const pushTop=centerY-top,pushBottom=bottom-centerY;
+ const minPush=Math.min(pushLeft,pushRight,pushTop,pushBottom);
+ let nx=0,ny=0;
+ if(minPush===pushLeft){body.x=left-.02;nx=-1}
+ else if(minPush===pushRight){body.x=right+.02;nx=1}
+ else if(minPush===pushTop){body.y=top-.02-(body.kind==='ball'?0:6);ny=-1}
+ else{body.y=bottom+.02-(body.kind==='ball'?0:6);ny=1}
+ const impactSpeed=-(body.vx*nx+body.vy*ny);
+ if(impactSpeed>0){
+  resolveStaticContact(body,nx,ny,body.kind==='ball'?.92:.84,'goal-post-wall');
+  if(body.kind==='ball')playPostClang(impactSpeed);
+  wallFX(body.x,body.y);
+ }
+}
 function collide(a,b){
  if(a._returnAnim||b._returnAnim)return;
  const ballContact=a.kind==='ball'||b.kind==='ball';
