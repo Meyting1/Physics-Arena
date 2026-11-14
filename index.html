@@ -495,9 +495,9 @@ function physics(h){
      b.y-FIELD.top,FIELD.bottom-b.y
     )-b.r;
     const wallProximity=clamp((b.r*2-wallGap)/(b.r*2),0,1);
-    wallCurveBoost=1+7*wallProximity;
+    wallCurveBoost=1+3*wallProximity;
    }
-   const curve=clamp(b.spin*magnusK*wallCurveBoost,-5.60,5.60),vx=b.vx,vy=b.vy;
+   const curve=clamp(b.spin*magnusK*wallCurveBoost,-2.80,2.80),vx=b.vx,vy=b.vy;
    b.vx+=-vy*curve*h;b.vy+=vx*curve*h;
   }
   b.x+=b.vx*h;b.y+=b.vy*h;
