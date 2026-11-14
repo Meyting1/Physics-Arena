@@ -99,15 +99,7 @@ function preparePostReactionBuffers(){
  }).catch(()=>{});
 }
 const bodies=[];
-// Four fixed circular goal posts. Their collision response uses the same circle-circle solver as player discs.
-const goalPostRadius=10.9;
-const goalPosts=[
- {x:FIELD.left,y:FIELD.goalTop,r:goalPostRadius,inv:0,vx:0,vy:0,spin:0,kind:'post'},
- {x:FIELD.left,y:FIELD.goalBottom,r:goalPostRadius,inv:0,vx:0,vy:0,spin:0,kind:'post'},
- {x:FIELD.right,y:FIELD.goalTop,r:goalPostRadius,inv:0,vx:0,vy:0,spin:0,kind:'post'},
- {x:FIELD.right,y:FIELD.goalBottom,r:goalPostRadius,inv:0,vx:0,vy:0,spin:0,kind:'post'}
-];
-let ballShotTrailUntil=0,ballShotTrailSamples=[];
+// Goalposts have no separate collision radius or influence zones.\nlet ballShotTrailUntil=0,ballShotTrailSamples=[];
 let screenState='teamSelect',chosenTeam=-1,opponentTeam=-1;
 const teamChoices=[
  {name:'ESTEGHLAL',file:'teams/esteghlal-new.png',image:new Image()},
@@ -152,7 +144,7 @@ function setup(startingTurn='A'){
  bodies.length=0;
  bodies.push(make(W*.24,H/2,47.15172,5,'#53f5e8','strikerA'));
  bodies.push(make(W*.76,H/2,47.15172,5,'#ff4f9a','strikerB'));
- bodies.push(make(FIELD.left+goalPostRadius+13.2+.5,FIELD.goalTop,13.2,.82,'#f5fbff','ball')); // Start beside the upper-left goalpost for repeatable corner-contact testing; the shared collision physics applies at all four corners.
+ bodies.push(make(FIELD.left+13.2+.5,FIELD.goalTop,13.2,.82,'#f5fbff','ball')); // Start beside the upper-left goalpost for repeatable corner-contact testing; the shared collision physics applies at all four corners.
  for(let i=0;i<4;i++){const y=H/2+(i-1.5)*76;bodies.push(make(W*.38,y,47.15172,5,'#1fb9c9','discA'));bodies.push(make(W*.62,y,47.15172,5,'#c73578','discB'));}
  particles=[];trails=[];aim=null;selected=null;turn=startingTurn;settleTimer=0;firstKickoffShotPending=true;firstKickoffShotInProgress=false;firstKickoffShotShooter=startingTurn;applyFormation(selectedFormation,teamA,false);applyFormation(aiFormation,teamB,true);updateTurn();
 }
@@ -426,7 +418,7 @@ function resolveArenaWalls(b){
  const hitRadius=b.kind==='ball'?b.r:Math.max(0,b.r*.73416-8);
  const contactOffset=b.kind==='ball'?0:6;
  const contactY=b.y+contactOffset;
- const goalOpeningTop=FIELD.goalTop+19;
+ const goalOpeningTop=FIELD.goalTop;
  const inGoalMouth=contactY>goalOpeningTop&&contactY<FIELD.goalBottom;
  const beyondLeftGoal=b.x<FIELD.left&&inGoalMouth;
  const beyondRightGoal=b.x>FIELD.right&&inGoalMouth;
@@ -596,32 +588,6 @@ function resolveStaticContact(body,nx,ny,restitution,key){
  body.spin=clamp(body.spin-tangentImpulse*radius*invI,-32,32);
 }
 function wallFX(x,y){if(Math.random()<.09)burst(x,y,'#53f5e8',3)}
-function resolvePostWall(body,post){
- if(body._returnAnim)return;
- // Treat each post as a small rectangular wall block, never as a circle.
- // The moving body's real collision footprint expands the flat faces.
- const radius=body.kind==='ball'?body.r:Math.max(0,body.r*.73416-8);
- const centerY=body.y+(body.kind==='ball'?0:6);
- const half=goalPostRadius;
- const left=post.x-half-radius,right=post.x+half+radius;
- const top=post.y+(post.y===FIELD.goalTop?19:0)-half-radius;
- const bottom=post.y+(post.y===FIELD.goalTop?19:0)+half+radius;
- if(body.x<=left||body.x>=right||centerY<=top||centerY>=bottom)return;
- const pushLeft=body.x-left,pushRight=right-body.x;
- const pushTop=centerY-top,pushBottom=bottom-centerY;
- const minPush=Math.min(pushLeft,pushRight,pushTop,pushBottom);
- let nx=0,ny=0;
- if(minPush===pushLeft){body.x=left-.02;nx=-1}
- else if(minPush===pushRight){body.x=right+.02;nx=1}
- else if(minPush===pushTop){body.y=top-.02-(body.kind==='ball'?0:6);ny=-1}
- else{body.y=bottom+.02-(body.kind==='ball'?0:6);ny=1}
- const impactSpeed=-(body.vx*nx+body.vy*ny);
- if(impactSpeed>0){
-  resolveStaticContact(body,nx,ny,body.kind==='ball'?.92:.84,'goal-post-wall');
-  if(body.kind==='ball')playPostClang(impactSpeed);
-  wallFX(body.x,body.y);
- }
-}
 function collide(a,b){
  if(a._returnAnim||b._returnAnim)return;
  const ballContact=a.kind==='ball'||b.kind==='ball';
