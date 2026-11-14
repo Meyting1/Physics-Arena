@@ -663,7 +663,23 @@ function collide(a,b){
  const tangentSpeed=tangentVelocityB-tangentVelocityA;
  const tangentDenom=total+ra*ra*invIA+rb*rb*invIB;
  let tangentImpulse=tangentDenom>0?-tangentSpeed/tangentDenom:0;
- const friction=ballContact?.20:.16;
+ // Classify the ball's circumference into 30 contact sectors (12 degrees each).
+ // Sector identity records WHERE the impact lands; the force remains continuous
+ // across sector borders so there are no artificial jumps in the simulation.
+ let ballSector=-1,obliqueImpact=0;
+ if(ballContact){
+  const ballIsA=a.kind==='ball',ball=ballIsA?a:b;
+  const outwardX=ballIsA?nx:-nx,outwardY=ballIsA?ny:-ny;
+  let contactAngle=Math.atan2(outwardY,outwardX);
+  if(contactAngle<0)contactAngle+=Math.PI*2;
+  ballSector=Math.floor(contactAngle/(Math.PI*2/30))%30;
+  obliqueImpact=Math.abs(tangentSpeed)/Math.max(1,Math.hypot(normalSpeed,tangentSpeed));
+  ball._lastContactSector=ballSector;
+  ball._lastContactObliqueness=obliqueImpact;
+ }
+ // Angled/glancing impacts get a little more tangential grip than clean,
+ // head-on impacts. This strengthens spin transfer at the actual contact point.
+ const friction=ballContact?.(0.20+0.16*obliqueImpact):.16;
  const maxFriction=friction*normalImpulse;
  tangentImpulse=clamp(tangentImpulse,-maxFriction,maxFriction);
  a.vx-=tangentImpulse*invA*tx;a.vy-=tangentImpulse*invA*ty;
