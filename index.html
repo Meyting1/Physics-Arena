@@ -419,7 +419,6 @@ function resolveArenaWalls(b){
  if(b._returnAnim)return;
  const hitRadius=b.kind==='ball'?b.r:Math.max(0,b.r*.73416-8);
  const contactOffset=b.kind==='ball'?0:6;
- const cx=b.x,cy=b.y+contactOffset;
  const restitution=b.kind==='ball'?.92:.84;
  // These segments are the same exact wall centre-lines drawn in orange by drawImpactRanges().
  // A moving body's effective radius is applied around each segment, including its endpoints.
@@ -440,9 +439,10 @@ function resolveArenaWalls(b){
  for(const wall of walls){
   const [x1,y1,x2,y2,key]=wall;
   const sx=x2-x1,sy=y2-y1,len2=sx*sx+sy*sy;
-  const t=Math.max(0,Math.min(1,((b.x-x1)*sx+(cy-y1)*sy)/len2));
+  const centerY=b.y+contactOffset;
+  const t=Math.max(0,Math.min(1,((b.x-x1)*sx+(centerY-y1)*sy)/len2));
   const px=x1+t*sx,py=y1+t*sy;
-  const dx=b.x-px,dy=cy-py,dist=Math.hypot(dx,dy);
+  const dx=b.x-px,dy=centerY-py,dist=Math.hypot(dx,dy);
   if(dist>=hitRadius)continue;
   let nx,ny;
   if(dist>1e-8){nx=dx/dist;ny=dy/dist;}
