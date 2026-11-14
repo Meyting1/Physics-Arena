@@ -547,10 +547,9 @@ function physics(h){
  // Several solver passes resolve contact chains and remove residual overlap.
  for(let pass=0;pass<4;pass++){
   for(let i=0;i<bodies.length;i++)for(let j=i+1;j<bodies.length;j++)collide(bodies[i],bodies[j]);
-  // All arena and goalpost contacts use flat, axis-aligned wall faces.
+  // All arena and goal-interior contacts use the normal flat-wall solver.
   for(const body of bodies){
    resolveArenaWalls(body);
-   for(const post of goalPosts)resolvePostWall(body,post);
   }
  }
  for(const b of bodies)if(b.kind==='ball')b._contactsLastTick=b._contactsThisTick;
