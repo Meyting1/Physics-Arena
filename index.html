@@ -679,7 +679,7 @@ function collide(a,b){
  let tangentImpulse=tangentDenom>0?-tangentSpeed/tangentDenom:0;
  // Glancing ball impacts get a modestly higher friction limit, transferring
  // more sideways impulse into spin. A near-normal hit keeps the original value.
- const friction=ballContact?clamp(.20+.24*ballObliqueness,.20,.44):.16;
+ const friction=ballContact?clamp(.20+.48*ballObliqueness,.20,.68):.16;
  const maxFriction=friction*normalImpulse;
  tangentImpulse=clamp(tangentImpulse,-maxFriction,maxFriction);
  a.vx-=tangentImpulse*invA*tx;a.vy-=tangentImpulse*invA*ty;
