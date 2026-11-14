@@ -77,7 +77,7 @@ const $=id=>document.getElementById(id);
 const W=1529,H=688,wall=24,goalW=170,goalDepth=78;
 // Keep the complete supplied arena image, including the player-name and score panels.
 const FIELD={left:330,right:1240,top:113,bottom:677,goalTop:272,goalBottom:490};
-const GOAL_UPPER_WALL_Y=FIELD.goalTop+10;
+const GOAL_UPPER_WALL_Y=FIELD.goalTop+20;
 let dpr=1,scale=1,offsetX=0,offsetY=0,scoreA=0,scoreB=0,turn='A',aim=null,selected=null,shots=0,particles=[],trails=[],soundOn=true,audio=null,toastTimer=0,settleTimer=0,goalEvents=0;
 let pendingPostReaction=false;
 // Only the very first shot after each centre restart is subject to the no-goal rule.
