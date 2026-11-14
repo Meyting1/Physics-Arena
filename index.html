@@ -1008,9 +1008,9 @@ function drawImpactRanges(){
  ctx.beginPath();
  ctx.moveTo(FIELD.left,FIELD.top);ctx.lineTo(FIELD.right,FIELD.top);
  ctx.moveTo(FIELD.left,FIELD.bottom);ctx.lineTo(FIELD.right,FIELD.bottom);
- ctx.moveTo(FIELD.left,FIELD.top);ctx.lineTo(FIELD.left,FIELD.goalTop);
+ ctx.moveTo(FIELD.left,FIELD.top);ctx.lineTo(FIELD.left,GOAL_UPPER_WALL_Y);
  ctx.moveTo(FIELD.left,FIELD.goalBottom);ctx.lineTo(FIELD.left,FIELD.bottom);
- ctx.moveTo(FIELD.right,FIELD.top);ctx.lineTo(FIELD.right,FIELD.goalTop);
+ ctx.moveTo(FIELD.right,FIELD.top);ctx.lineTo(FIELD.right,GOAL_UPPER_WALL_Y);
  ctx.moveTo(FIELD.right,FIELD.goalBottom);ctx.lineTo(FIELD.right,FIELD.bottom);
  // Goal interior: upper/lower side walls and the back wall on both sides.
  ctx.moveTo(FIELD.left-goalDepth,GOAL_UPPER_WALL_Y);ctx.lineTo(FIELD.left,GOAL_UPPER_WALL_Y);
