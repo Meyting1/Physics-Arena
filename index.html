@@ -661,6 +661,17 @@ function collide(a,b){
  const tangentVelocityA=(a.vx*tx+a.vy*ty)+a.spin*ra;
  const tangentVelocityB=(b.vx*tx+b.vy*ty)-b.spin*rb;
  const tangentSpeed=tangentVelocityB-tangentVelocityA;
+ // Record the ball's impact location as one of 30 circumference sectors.
+ // Diagnostic only: no impulse, friction, spin, velocity, or Magnus changes.
+ if(ballContact){
+  const ballIsA=a.kind==='ball',ball=ballIsA?a:b;
+  const outwardX=ballIsA?nx:-nx,outwardY=ballIsA?ny:-ny;
+  let contactAngle=Math.atan2(outwardY,outwardX);
+  if(contactAngle<0)contactAngle+=Math.PI*2;
+  ball._lastContactAngle=contactAngle;
+  ball._lastContactSector=Math.floor(contactAngle/(Math.PI*2/30))%30;
+  ball._lastContactObliqueness=Math.abs(tangentSpeed)/Math.max(1,Math.hypot(normalSpeed,tangentSpeed));
+ }
  const tangentDenom=total+ra*ra*invIA+rb*rb*invIB;
  let tangentImpulse=tangentDenom>0?-tangentSpeed/tangentDenom:0;
  const friction=ballContact?.20:.16;
