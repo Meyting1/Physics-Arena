@@ -661,8 +661,10 @@ function collide(a,b){
  const tangentVelocityA=(a.vx*tx+a.vy*ty)+a.spin*ra;
  const tangentVelocityB=(b.vx*tx+b.vy*ty)-b.spin*rb;
  const tangentSpeed=tangentVelocityB-tangentVelocityA;
- // Record the ball's impact location as one of 30 circumference sectors.
- // Diagnostic only: no impulse, friction, spin, velocity, or Magnus changes.
+ // Classify the ball's contact point and measure how glancing the impact is.
+ // The 30 sectors describe where contact occurs; the continuous angle and
+ // tangential surface speed determine the physical response without hard edges.
+ let ballObliqueness=0;
  if(ballContact){
   const ballIsA=a.kind==='ball',ball=ballIsA?a:b;
   const outwardX=ballIsA?nx:-nx,outwardY=ballIsA?ny:-ny;
@@ -670,11 +672,14 @@ function collide(a,b){
   if(contactAngle<0)contactAngle+=Math.PI*2;
   ball._lastContactAngle=contactAngle;
   ball._lastContactSector=Math.floor(contactAngle/(Math.PI*2/30))%30;
-  ball._lastContactObliqueness=Math.abs(tangentSpeed)/Math.max(1,Math.hypot(normalSpeed,tangentSpeed));
+  ballObliqueness=Math.abs(tangentSpeed)/Math.max(1,Math.hypot(normalSpeed,tangentSpeed));
+  ball._lastContactObliqueness=ballObliqueness;
  }
  const tangentDenom=total+ra*ra*invIA+rb*rb*invIB;
  let tangentImpulse=tangentDenom>0?-tangentSpeed/tangentDenom:0;
- const friction=ballContact?.20:.16;
+ // Glancing ball impacts get a modestly higher friction limit, transferring
+ // more sideways impulse into spin. A near-normal hit keeps the original value.
+ const friction=ballContact?clamp(.20+.12*ballObliqueness,.20,.32):.16;
  const maxFriction=friction*normalImpulse;
  tangentImpulse=clamp(tangentImpulse,-maxFriction,maxFriction);
  a.vx-=tangentImpulse*invA*tx;a.vy-=tangentImpulse*invA*ty;
