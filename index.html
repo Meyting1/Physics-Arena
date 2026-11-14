@@ -991,7 +991,39 @@ if(selected&&gestureVector){
   ctx.setLineDash([]);ctx.restore();ctx.globalAlpha=1;
  }
 }
-drawGoalOverlay(goalLeftTexture,goalLeftBounds,FIELD.left-goalDepth,FIELD.goalTop,goalDepth,FIELD.goalBottom-FIELD.goalTop);
+function drawImpactRanges(){
+ // Orange dashed guides show the exact collision reach used by the physics solver.
+ ctx.save();
+ ctx.strokeStyle='#ff982b';ctx.lineWidth=2.2;ctx.globalAlpha=.96;
+ ctx.setLineDash([8,7]);
+ // Effective circular contact radius for every movable element.
+ for(const b of bodies){
+  if(b._returnAnim){} // Keep guides attached to the element during its return animation.
+  const hitRadius=b.kind==='ball'?b.r:Math.max(0,b.r*.73416-8);
+  const contactOffset=b.kind==='ball'?0:6;
+  ctx.beginPath();ctx.arc(b.x,b.y+contactOffset,hitRadius,0,Math.PI*2);ctx.stroke();
+ }
+ // Main pitch walls, with the goal openings left clear.
+ ctx.beginPath();
+ ctx.moveTo(FIELD.left,FIELD.top);ctx.lineTo(FIELD.right,FIELD.top);
+ ctx.moveTo(FIELD.left,FIELD.bottom);ctx.lineTo(FIELD.right,FIELD.bottom);
+ ctx.moveTo(FIELD.left,FIELD.top);ctx.lineTo(FIELD.left,FIELD.goalTop);
+ ctx.moveTo(FIELD.left,FIELD.goalBottom);ctx.lineTo(FIELD.left,FIELD.bottom);
+ ctx.moveTo(FIELD.right,FIELD.top);ctx.lineTo(FIELD.right,FIELD.goalTop);
+ ctx.moveTo(FIELD.right,FIELD.goalBottom);ctx.lineTo(FIELD.right,FIELD.bottom);
+ // Goal interior: upper/lower side walls and the back wall on both sides.
+ ctx.moveTo(FIELD.left-goalDepth,FIELD.goalTop);ctx.lineTo(FIELD.left,FIELD.goalTop);
+ ctx.moveTo(FIELD.left-goalDepth,FIELD.goalBottom);ctx.lineTo(FIELD.left,FIELD.goalBottom);
+ ctx.moveTo(FIELD.left-goalDepth,FIELD.goalTop);ctx.lineTo(FIELD.left-goalDepth,FIELD.goalBottom);
+ ctx.moveTo(FIELD.right,FIELD.goalTop);ctx.lineTo(FIELD.right+goalDepth,FIELD.goalTop);
+ ctx.moveTo(FIELD.right,FIELD.goalBottom);ctx.lineTo(FIELD.right+goalDepth,FIELD.goalBottom);
+ ctx.moveTo(FIELD.right+goalDepth,FIELD.goalTop);ctx.lineTo(FIELD.right+goalDepth,FIELD.goalBottom);
+ ctx.stroke();
+ ctx.setLineDash([]);ctx.restore();
+}
+
+drawImpactRanges();
+ drawGoalOverlay(goalLeftTexture,goalLeftBounds,FIELD.left-goalDepth,FIELD.goalTop,goalDepth,FIELD.goalBottom-FIELD.goalTop);
  drawGoalOverlay(goalRightTexture,goalRightBounds,FIELD.right,FIELD.goalTop,goalDepth,FIELD.goalBottom-FIELD.goalTop);
  ctx.restore();
  particles=particles.filter(p=>p.life-->0);for(const p of particles){p.x+=p.vx;p.y+=p.vy;p.vx*=.96;p.vy*=.96}
