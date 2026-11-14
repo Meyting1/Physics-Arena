@@ -488,16 +488,16 @@ function physics(h){
    const magnusK=.006*10.67742*(referenceMass/b.mass);
    let wallCurveBoost=1;
    if(b.kind==='ball'){
-    // Smoothly double the ball's Magnus response close to the arena walls.
-    // Full boost within one ball radius; fades to normal by three radii.
+    // Strongly amplify the ball's Magnus response close to the arena walls.
+    // Four times the base response at contact; fades smoothly to normal farther away.
     const wallGap=Math.min(
      b.x-FIELD.left,FIELD.right-b.x,
      b.y-FIELD.top,FIELD.bottom-b.y
     )-b.r;
     const wallProximity=clamp((b.r*2-wallGap)/(b.r*2),0,1);
-    wallCurveBoost=1+wallProximity;
+    wallCurveBoost=1+3*wallProximity;
    }
-   const curve=clamp(b.spin*magnusK*wallCurveBoost,-1.40,1.40),vx=b.vx,vy=b.vy;
+   const curve=clamp(b.spin*magnusK*wallCurveBoost,-2.80,2.80),vx=b.vx,vy=b.vy;
    b.vx+=-vy*curve*h;b.vy+=vx*curve*h;
   }
   b.x+=b.vx*h;b.y+=b.vy*h;
