@@ -555,11 +555,9 @@ function physics(h){
  // Several solver passes resolve contact chains and remove residual overlap.
  for(let pass=0;pass<4;pass++){
   for(let i=0;i<bodies.length;i++)for(let j=i+1;j<bodies.length;j++)collide(bodies[i],bodies[j]);
-  // Goal posts use the same fixed-obstacle rebound response as the arena walls.
-  // Re-solve boundaries after body contacts in this same tick. This lets a
-  // ball pressed against a wall receive the wall and disc impulses together.
+  // Goalposts are visual markers only: circular collisions are disabled.
+  // Their opening edges are handled as straight wall faces by resolveArenaWalls.
   for(const body of bodies)resolveArenaWalls(body);
-  for(const body of bodies)for(const post of goalPosts)collidePostWall(body,post);
  }
  for(const b of bodies)if(b.kind==='ball')b._contactsLastTick=b._contactsThisTick;
  const ball=bodies[2];
@@ -596,31 +594,6 @@ function resolveStaticContact(body,nx,ny,restitution,key){
  body.spin=clamp(body.spin-tangentImpulse*radius*invI,-32,32);
 }
 function wallFX(x,y){if(Math.random()<.09)burst(x,y,'#53f5e8',3)}
-function collidePostWall(body,post){
- if(body._returnAnim)return;
- // Use the body's real contact footprint, not its full decorative artwork.
- const bodyRadius=body.kind==='ball'?body.r:Math.max(0,body.r*.73416-8);
- const bodyCenterY=body.y+(body.kind==='ball'?0:6);
- const postCenterY=post.y+(post.y===FIELD.goalTop?19:0);
- let dx=body.x-post.x,dy=bodyCenterY-postCenterY;
- let dist=Math.hypot(dx,dy);
- const minDistance=bodyRadius+post.r;
- if(dist>=minDistance)return;
- if(dist<1e-8){dx=1;dy=0;dist=1}
- const nx=dx/dist,ny=dy/dist;
- // Push the moving body out to the post's physical surface.
- const overlap=minDistance-dist;
- body.x+=nx*(overlap+.02);
- body.y+=ny*(overlap+.02);
- // Rebound and friction are solved against an immovable circular post.
-  const impactSpeed=-(body.vx*nx+body.vy*ny);
-  if(impactSpeed>0){
-   resolveStaticContact(body,nx,ny,body.kind==='ball'?.92:.84,'goal-post');
-   if(body.kind==='ball')playPostClang(impactSpeed);
-   wallFX(body.x,body.y);
-  }
-
-}
 function collide(a,b){
  if(a._returnAnim||b._returnAnim)return;
  const ballContact=a.kind==='ball'||b.kind==='ball';
