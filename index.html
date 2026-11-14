@@ -486,18 +486,10 @@ function physics(h){
    // increase curvature; lighter bodies accelerate more under the same lift force.
    const referenceMass=.82;
    const magnusK=.006*10.67742*(referenceMass/b.mass);
-   let wallCurveBoost=1;
-   if(b.kind==='ball'){
-    // Strongly amplify the ball's Magnus response close to the arena walls.
-    // Four times the base response at contact; fades smoothly to normal farther away.
-    const wallGap=Math.min(
-     b.x-FIELD.left,FIELD.right-b.x,
-     b.y-FIELD.top,FIELD.bottom-b.y
-    )-b.r;
-    const wallProximity=clamp((b.r*2-wallGap)/(b.r*2),0,1);
-    wallCurveBoost=1+3*wallProximity;
-   }
-   const curve=clamp(b.spin*magnusK*wallCurveBoost,-2.80,2.80),vx=b.vx,vy=b.vy;
+   // Do not artificially amplify spin near a wall or corner.
+   // Weak impacts should retain their tangential path; stronger shots can
+   // still curve naturally when contact friction has generated real spin.
+   const curve=clamp(b.spin*magnusK,-2.80,2.80),vx=b.vx,vy=b.vy;
    b.vx+=-vy*curve*h;b.vy+=vx*curve*h;
   }
   b.x+=b.vx*h;b.y+=b.vy*h;
